@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <style>
+      .title { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 700; }
+      .layer-label { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; font-size: 15px; fill: #16325C; }
+      .layer-desc { font-size: 11.5px; fill: #5B6472; }
+      .box-label { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; font-size: 12px; fill: #101521; }
+      .box-sub { font-size: 10px; fill: #5B6472; }
+      .mono { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; fill: #5B6472; }
+      .arrow-label { font-size: 10px; fill: #97A0AF; font-style: italic; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#97A0AF"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="620" fill="#FFFFFF"/>
+
+  <!-- Title -->
+  <text x="40" y="42" class="title" font-size="20" fill="#101521">Stratum Gateway — Panel Architecture</text>
+  <text x="40" y="62" font-size="12" fill="#5B6472">A layered view from operator to kernel</text>
+
+  <!-- Layer 1: User / Browser -->
+  <rect x="40" y="90" width="820" height="66" rx="10" fill="#EEF2F6" stroke="#D7DEE8" stroke-width="1"/>
+  <text x="60" y="118" class="layer-label">Operator</text>
+  <text x="60" y="136" class="layer-desc">Browser over HTTPS — no client-side framework, no install</text>
+
+  <rect x="620" y="105" width="220" height="36" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="640" y="128" class="box-label">Web Browser</text>
+
+  <!-- Arrow 1 -->
+  <line x1="450" y1="156" x2="450" y2="184" stroke="#97A0AF" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="462" y="174" class="arrow-label">HTTPS · signed session cookie</text>
+
+  <!-- Layer 2: Panel application -->
+  <rect x="40" y="190" width="820" height="180" rx="10" fill="#EAF2FE" stroke="#3E8EED" stroke-width="1.5"/>
+  <text x="60" y="218" class="layer-label">Panel Application</text>
+  <text x="60" y="236" class="layer-desc">Python · FastAPI · Jinja2 · Uvicorn (behind nginx)</text>
+
+  <!-- Panel sub-blocks -->
+  <rect x="60" y="252" width="170" height="52" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="76" y="274" class="box-label">main.py</text>
+  <text x="76" y="290" class="box-sub">Routes · Auth · Sessions</text>
+
+  <rect x="244" y="252" width="170" height="52" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="260" y="274" class="box-label">system_info.py</text>
+  <text x="260" y="290" class="box-sub">Reads live system state</text>
+
+  <rect x="428" y="252" width="170" height="52" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="444" y="274" class="box-label">safe_apply.py</text>
+  <text x="444" y="290" class="box-sub">Validate · Stage · Commit</text>
+
+  <rect x="612" y="252" width="170" height="52" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="628" y="274" class="box-label">update_manager.py</text>
+  <text x="628" y="290" class="box-sub">Signed update pipeline</text>
+
+  <rect x="60" y="316" width="170" height="42" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="76" y="336" class="box-label">notifications.py</text>
+  <text x="76" y="351" class="box-sub">Email · events</text>
+
+  <rect x="244" y="316" width="170" height="42" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="260" y="336" class="box-label">radius_auth.py</text>
+  <text x="260" y="351" class="box-sub">802.1X · portal auth</text>
+
+  <rect x="428" y="316" width="170" height="42" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="444" y="336" class="box-label">captive_portal_*</text>
+  <text x="444" y="351" class="box-sub">Guest access</text>
+
+  <rect x="612" y="316" width="170" height="42" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="628" y="336" class="box-label">33 Jinja2 templates</text>
+  <text x="628" y="351" class="box-sub">One per module</text>
+
+  <!-- Arrow 2 -->
+  <line x1="450" y1="370" x2="450" y2="398" stroke="#97A0AF" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="462" y="388" class="arrow-label">subprocess · file I/O · systemctl</text>
+
+  <!-- Layer 3: Services -->
+  <rect x="40" y="404" width="820" height="110" rx="10" fill="#EEF2F6" stroke="#D7DEE8" stroke-width="1"/>
+  <text x="60" y="432" class="layer-label">Service Layer</text>
+  <text x="60" y="450" class="layer-desc">Independent daemons, each controllable from the panel</text>
+
+  <rect x="60" y="464" width="120" height="36" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="120" y="487" class="box-label" text-anchor="middle">Suricata</text>
+
+  <rect x="194" y="464" width="120" height="36" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="254" y="487" class="box-label" text-anchor="middle">CrowdSec</text>
+
+  <rect x="328" y="464" width="120" height="36" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="388" y="487" class="box-label" text-anchor="middle">Unbound</text>
+
+  <rect x="462" y="464" width="120" height="36" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="522" y="487" class="box-label" text-anchor="middle">WireGuard</text>
+
+  <rect x="596" y="464" width="120" height="36" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="656" y="487" class="box-label" text-anchor="middle">Kea DHCP</text>
+
+  <rect x="730" y="464" width="110" height="36" rx="6" fill="#FFFFFF" stroke="#C4CEDC"/>
+  <text x="785" y="487" class="box-label" text-anchor="middle">RADIUS</text>
+
+  <!-- Arrow 3 -->
+  <line x1="450" y1="514" x2="450" y2="542" stroke="#97A0AF" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="462" y="532" class="arrow-label">packet handling · netfilter hooks</text>
+
+  <!-- Layer 4: Kernel -->
+  <rect x="40" y="548" width="820" height="52" rx="10" fill="#16325C" stroke="#16325C"/>
+  <text x="60" y="573" class="layer-label" fill="#FFFFFF">Kernel</text>
+  <text x="60" y="590" class="layer-desc" fill="#AFC2E0">nftables · routing · WireGuard module · fq_codel QoS · Debian 13 · Linux 6.12 LTS</text>
+
+  <!-- Footer note -->
+  <text x="860" y="612" font-size="9.5" fill="#97A0AF" text-anchor="end">stratumfw.com</text>
+</svg>

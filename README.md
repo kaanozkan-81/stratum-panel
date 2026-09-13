@@ -31,4 +31,49 @@ No JavaScript framework. No client-side build step. No database — state lives 
 
 ---
 
+## Screenshots
+
+The four interactive demo pages published on [stratumfw.com](https://stratumfw.com/try-me/) render the actual panel templates with mock data. They provide an honest preview of the UI:
+
+### Dashboard
+
+The default view — system vitals, interface status, live security events, and configurable widgets.
+
+![Stratum Gateway dashboard](docs/screenshots/dashboard.png)
+
+### WireGuard VPN
+
+Peer management, key provisioning, QR code generation for mobile clients, and live connection status.
+
+![WireGuard VPN management](docs/screenshots/vpn.png)
+
+### Web Filtering
+
+Category-based DNS filtering with a curated feed catalog, per-feed scope, and scheduled updates.
+
+![Web filtering](docs/screenshots/webfilter.png)
+
+### Geo & Threat Blocking
+
+Country-level blocking plus a continuously refreshed threat IP list aggregated from public intelligence feeds.
+
+![Geo and threat IP blocking](docs/screenshots/geoblock.png)
+
+---
+
+## Architecture
+
+The panel is a single Python process layered between the operator's browser and the Linux kernel. Every configuration change flows through a validated pipeline before it reaches nftables, systemd, or the underlying service daemons.
+
+![Panel architecture](docs/architecture.svg)
+
+### Layers, briefly
+
+- **Operator** — any modern browser. HTTPS only, signed session cookie, no client-side framework.
+- **Panel application** — FastAPI + Uvicorn, with Jinja2 server-rendered templates. `system_info.py` reads live state; `safe_apply.py` orchestrates changes; `update_manager.py` handles signed updates.
+- **Service layer** — Suricata, CrowdSec, Unbound, WireGuard, Kea DHCP, RADIUS. Independent daemons, each controlled from the panel through subprocess calls and systemd.
+- **Kernel** — nftables, routing, the WireGuard kernel module, and fq_codel QoS. All packet handling happens here at line rate.
+
+---
+
 ## Repository layout
