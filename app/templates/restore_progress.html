@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Restoring - Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E; --blue-line:#2E5D91;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12); --accent-2:#0EA5A0;
+    --amber:#F0A94E; --amber-dim:rgba(240,169,78,.15); --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line:#D7DEE8; --line-strong:#C4CEDC; --widget-head:#F4F8FD;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--canvas); font-family:var(--font-body); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center;}
+  .card{background:var(--paper); border:1px solid var(--line-strong); border-radius:14px; padding:36px; width:440px; box-shadow:0 4px 20px rgba(16,21,33,.06); text-align:center;}
+  .icon-wrap{width:56px; height:56px; border-radius:50%; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;}
+  .icon-wrap svg{animation:spin 1.6s linear infinite;}
+  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  h1{font-family:var(--font-display); font-size:18px; font-weight:600; margin-bottom:8px;}
+  .subtitle{font-size:12.5px; color:var(--ash); margin-bottom:24px; line-height:1.5;}
+  .bar-track{width:100%; height:10px; border-radius:6px; background:var(--canvas); overflow:hidden; margin-bottom:12px;}
+  .bar-fill{height:100%; width:0%; border-radius:6px; background:linear-gradient(90deg, var(--accent), var(--accent-2)); transition:width .8s ease;}
+  .pct{font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--accent);}
+  .status-line{font-size:11.5px; color:var(--ash); margin-top:14px;}
+  .success{color:var(--accent-2); font-weight:600;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap" id="icon-wrap">
+      <svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M16 10a6 6 0 1 1-2-4.5"/><path d="M16 3v4h-4"/></svg>
+    </div>
+    <h1 id="title">Restoring System</h1>
+    <div class="subtitle" id="subtitle">Please don't close this page. The panel and all services are restarting — this usually takes about a minute.</div>
+    <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+    <div class="pct" id="pct">0%</div>
+    <div class="status-line" id="status-line">Waiting for services to come back online&hellip;</div>
+  </div>
+
+<script>
+  const bar = document.getElementById('bar');
+  const pct = document.getElementById('pct');
+  const title = document.getElementById('title');
+  const subtitle = document.getElementById('subtitle');
+  const statusLine = document.getElementById('status-line');
+  const iconWrap = document.getElementById('icon-wrap');
+
+  let fakePct = 0;
+  let done = false;
+
+  const fakeInterval = setInterval(() => {
+    if (done) return;
+    if (fakePct < 90) {
+      fakePct += (90 - fakePct) * 0.04 + 0.3;
+      if (fakePct > 90) fakePct = 90;
+      bar.style.width = fakePct + '%';
+      pct.textContent = Math.round(fakePct) + '%';
+    }
+  }, 400);
+
+  function showResult(success, message) {
+    done = true;
+    clearInterval(fakeInterval);
+    bar.style.width = '100%';
+    pct.textContent = '100%';
+    statusLine.textContent = '';
+    iconWrap.querySelector('svg').style.animation = 'none';
+
+    if (success) {
+      title.textContent = 'Restore Complete';
+      title.classList.add('success');
+      subtitle.textContent = message + ' Redirecting to the dashboard\u2026';
+      iconWrap.querySelector('svg').setAttribute('stroke', 'var(--accent-2)');
+      setTimeout(() => { window.location.href = '/'; }, 2500);
+    } else {
+      bar.style.background = 'var(--danger)';
+      title.textContent = 'Restore Failed';
+      title.style.color = 'var(--danger)';
+      subtitle.textContent = message;
+      iconWrap.style.background = 'var(--danger-dim)';
+      iconWrap.querySelector('svg').setAttribute('stroke', 'var(--danger)');
+      const link = document.createElement('a');
+      link.href = '/backup';
+      link.textContent = 'Back to Backup page';
+      link.style.cssText = 'display:inline-block; margin-top:16px; font-size:12px; color:var(--accent); font-weight:600;';
+      document.querySelector('.card').appendChild(link);
+    }
+  }
+
+  function checkHealth() {
+    if (done) return;
+    fetch('/api/health', { cache: 'no-store', signal: AbortSignal.timeout(2500) })
+      .then(res => {
+        if (!res.ok) return;
+        // ONEMLI: panelin ayakta olmasi TEK BASINA restore'un basarili
+        // oldugu anlamina gelmez - gecersiz/reddedilen bir restore'da
+        // panel ZATEN hic kapanmiyor. Bu yuzden GERCEK sonucu
+        // /api/restore-status'tan ayrica dogruluyoruz.
+        return fetch('/api/restore-status', { cache: 'no-store', signal: AbortSignal.timeout(2500) })
+          .then(r => r.json())
+          .then(data => {
+            // ONEMLI: "success: false" ile birlikte gelen "Restore in
+            // progress..." mesaji GERCEK BIR HATA DEGIL - stratum-restore
+            // panel servisini surec boyunca HIC DURDURMUYOR (sadece EN
+            // SONDA yeniden baslatiyor), bu yuzden health-check restore
+            // DEVAM EDERKEN bile basarili donebilir. Bu ARA DURUMU kesin
+            // basarisizlik ile KARISTIRMAMAK icin ayri ele aliyoruz.
+            if (data.success === true) {
+              showResult(true, data.message || 'The system has been restored successfully.');
+            } else if (data.success === false && data.message !== 'Restore in progress...') {
+              showResult(false, data.message || 'The restore failed or was rejected. Nothing was changed.');
+            }
+            // success === null (henuz durum dosyasi yok) ya da "in progress"
+            // ise beklemeye devam - kesin sonuc gelene kadar hicbir sey gosterme
+          });
+      })
+      .catch(() => {});
+  }
+
+  setTimeout(() => {
+    checkHealth();
+    setInterval(checkHealth, 3000);
+  }, 5000);
+</script>
+</body>
+</html>

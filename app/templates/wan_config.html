@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12);
+    --amber-dim:rgba(240,169,78,.15); --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line-strong:#C4CEDC;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;}
+  .card{background:var(--paper); border:1px solid var(--line-strong); border-radius:12px; max-width:480px; width:100%; overflow:hidden; box-shadow:0 4px 20px rgba(16,21,33,.08);}
+  .card-head{background:var(--blue-900); color:#fff; padding:18px 24px;}
+  .card-head h1{font-family:var(--font-display); font-size:16px; font-weight:600;}
+  .card-head p{font-size:11.5px; color:#8FA9CB; margin-top:2px;}
+  .card-body{padding:24px;}
+  .error-banner{background:var(--danger-dim); border:1px solid rgba(229,72,77,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#B3232A;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:11px; font-weight:600; color:var(--ash); margin-bottom:6px; text-transform:uppercase; letter-spacing:.02em;}
+  .field input, .field select{width:100%; padding:10px 12px; border:1.5px solid var(--line-strong); border-radius:8px; font-size:13px;}
+  .field input:focus, .field select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim);}
+  .pppoe-fields{display:none; padding:14px; background:var(--canvas); border-radius:8px; margin-top:8px;}
+  .pppoe-fields.show{display:block;}
+  .actions{display:flex; gap:10px; margin-top:22px;}
+  .btn{flex:1; padding:11px 16px; border-radius:8px; font-size:12.5px; font-weight:600; border:1px solid var(--line-strong); background:var(--paper); color:var(--text); text-align:center; cursor:pointer;}
+  .btn.primary{background:var(--blue-800); color:#fff; border-color:var(--blue-800);}
+  .btn.primary:hover{background:var(--accent);}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-head">
+      <h1>WAN Configuration: {{ iface_name }}</h1>
+      <p>Choose how this WAN gets its IP address</p>
+    </div>
+    <div class="card-body">
+      {% if error %}
+      <div class="error-banner">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="/interfaces/wan-config/{{ iface_name }}">
+        <div class="field">
+          <label>Interface Name (optional)</label>
+          <input type="text" name="new_iface_name" placeholder="{{ iface_name }}">
+          <small style="color:var(--ash-dark); font-size:11px;">Leave blank to keep current name.</small>
+        </div>
+
+        <div class="field">
+          <label>Connection Type</label>
+          <select name="mode" id="modeSelect" onchange="toggleModeFields()">
+            <option value="dhcp" {{ 'selected' if current_mode == 'dhcp' }}>DHCP (automatic)</option>
+            <option value="static" {{ 'selected' if current_mode == 'static' }}>Static IPv4</option>
+            <option value="pppoe" {{ 'selected' if current_mode == 'pppoe' }}>PPPoE</option>
+          </select>
+        </div>
+
+        <div class="pppoe-fields {{ 'show' if current_mode == 'pppoe' }}" id="pppoeFields">
+          <div class="field">
+            <label>PPPoE Username</label>
+            <input type="text" name="pppoe_user" placeholder="isp_username">
+          </div>
+          <div class="field">
+            <label>PPPoE Password</label>
+            <input type="password" name="pppoe_pass" placeholder="••••••••">
+          </div>
+        </div>
+
+        <div class="pppoe-fields {{ 'show' if current_mode == 'static' }}" id="staticFields">
+          <div class="field">
+            <label>IPv4 Address</label>
+            <input type="text" name="static_ip" value="{{ current_ip }}" placeholder="203.0.113.50">
+          </div>
+          <div class="field">
+            <label>Subnet (prefix length)</label>
+            <input type="text" name="static_prefix" value="{{ current_prefix }}" placeholder="24">
+          </div>
+          <div class="field">
+            <label>IPv4 Upstream Gateway</label>
+            <input type="text" name="static_gateway" value="{{ current_gateway }}" placeholder="203.0.113.1">
+          </div>
+        </div>
+
+        <div class="field" style="border-top:1px solid var(--line-strong); padding-top:16px; margin-top:4px;">
+          <label>Reserved Networks</label>
+          <label style="display:flex; align-items:center; gap:8px; font-weight:400; text-transform:none; font-size:12.5px; cursor:pointer; padding:6px 0;">
+            <input type="checkbox" name="block_private" value="yes" {{ 'checked' if block_private }} style="width:15px; height:15px;">
+            Block private networks and loopback addresses (RFC1918, 127.0.0.0/8)
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; font-weight:400; text-transform:none; font-size:12.5px; cursor:pointer; padding:6px 0;">
+            <input type="checkbox" name="block_bogons" value="yes" {{ 'checked' if block_bogons }} style="width:15px; height:15px;">
+            Block bogon networks (reserved/unallocated ranges)
+          </label>
+        </div>
+
+        <div class="actions">
+          <a href="/interfaces" class="btn">Cancel</a>
+          <button type="submit" class="btn primary">Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function toggleModeFields() {
+      const mode = document.getElementById('modeSelect').value;
+      document.getElementById('pppoeFields').classList.toggle('show', mode === 'pppoe');
+      document.getElementById('staticFields').classList.toggle('show', mode === 'static');
+    }
+  </script>
+</body>
+</html>

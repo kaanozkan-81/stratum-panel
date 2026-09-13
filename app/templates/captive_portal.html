@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Captive Portal - Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<style>
+  :root{
+    --blue-900:#0F2A4A; --blue-800:#173A63; --blue-line:#274A72; --text-dark:#DCE6F2;
+    --canvas:#F4F6F9; --paper:#FFFFFF; --text:#1B2430; --ash:#6B7686;
+    --line:#E4E8EE; --line-strong:#D3D9E2; --accent:#3E8EED; --accent-dim:#EAF2FE;
+    --danger:#E5484D; --danger-dim:#FDEBEC; --amber:#F5A623; --success:#2E9E5B;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; -webkit-font-smoothing:antialiased; margin:0;}
+  .layout{display:flex; min-height:100vh;}
+  .sidebar{width:250px; flex-shrink:0; background:var(--blue-900); color:var(--text-dark); display:flex; flex-direction:column;}
+  .sidebar-head{padding:20px 18px; font-family:var(--font-display); font-weight:700; font-size:16px; color:#fff; border-bottom:1px solid var(--blue-line);}
+  .nav{flex:1; overflow-y:auto; padding:12px 10px;}
+  .nav-group{margin-bottom:8px;}
+  .nav-group-label{font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#6E8CB8; padding:10px 10px 4px;}
+  .nav-item{display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px; color:#B8CBE6; text-decoration:none; font-size:12.5px; margin-bottom:1px;}
+  .nav-item svg{width:16px; height:16px; flex-shrink:0;}
+  .nav-item:hover{background:var(--blue-800); color:#fff;}
+  .nav-item.active{background:var(--blue-800); color:#fff; font-weight:600;}
+  .main{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .topbar{padding:16px 26px; border-bottom:1px solid var(--line); background:var(--paper);}
+  .crumb{font-size:13px; color:var(--ash);}
+  .crumb b{color:var(--text);}
+  .content{padding:24px 26px; max-width:980px;}
+  .card{background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:20px; margin-bottom:20px;}
+  .section-title{font-family:var(--font-display); font-weight:600; font-size:13px; color:var(--ash); text-transform:uppercase; letter-spacing:.04em; margin:0 0 14px;}
+  .info-banner{display:flex; gap:10px; align-items:flex-start; background:var(--accent-dim); border:1px solid rgba(62,142,237,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#1D5AA3;}
+  .success-banner{background:#E9F7EF; border:1px solid rgba(46,158,91,.35); color:#1E7A45; padding:10px 16px; border-radius:8px; font-size:12.5px; margin-bottom:16px;}
+  .error-banner{background:var(--danger-dim); border:1px solid rgba(229,72,77,.35); color:#B3232A; padding:10px 16px; border-radius:8px; font-size:12.5px; margin-bottom:16px;}
+  label.field-label{display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;}
+  input[type=text], input[type=number], input[type=url], textarea, select{
+    width:100%; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12.5px; font-family:var(--font-body);
+  }
+  textarea{resize:vertical; min-height:70px;}
+  .row{display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px;}
+  .row > div{flex:1; min-width:200px;}
+  .checkbox-list{display:flex; flex-direction:column; gap:8px;}
+  .checkbox-item{display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line-strong); border-radius:6px; font-size:12.5px;}
+  .checkbox-item input{width:auto;}
+  .toggle-row{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+  .btn{display:inline-block; padding:9px 16px; border-radius:7px; border:none; background:var(--accent); color:#fff; font-size:12.5px; font-weight:600; cursor:pointer; font-family:var(--font-body);}
+  .btn:hover{opacity:.92;}
+  .btn-secondary{background:var(--paper); border:1.5px solid var(--line-strong); color:var(--text);}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark" style="width:32px;height:32px;flex-shrink:0;overflow:hidden;"><svg viewBox="0 0 32 32" fill="none" style="width:32px;height:32px;display:block;"><rect x="4" y="8" width="24" height="4" rx="1.5" fill="#3E8EED"/><rect x="4" y="14" width="24" height="4" rx="1.5" fill="#6FB3F5" opacity=".9"/><rect x="4" y="20" width="24" height="4" rx="1.5" fill="#9DCBFA" opacity=".8"/></svg></div>
+      <div><div class="brand-name">Stratum</div><div class="brand-sub">GATEWAY &middot; v0.1</div></div>
+    </div>
+    <nav class="nav-scroll">
+      <div class="nav-group"><a class="nav-item" href="/"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="3" y="10.5" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.3"/></svg>Overview</a></div>
+      <div class="nav-group"><div class="nav-group-label">Network</div>
+        <a class="nav-item" href="/interfaces"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="1.8"/><circle cx="4" cy="16" r="1.8"/><circle cx="16" cy="16" r="1.8"/><path d="M10 5.8V10M10 10L4 14.3M10 10l6 4.3"/></svg>Interfaces &amp; VLANs</a>
+        <a class="nav-item" href="/multi-wan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-5 5-8 8-8s6.5 3 8 8"/><path d="M2 12l3-1.2M18 12l-3-1.2"/><circle cx="10" cy="15.5" r="1.6"/></svg>Multi-WAN &amp; Failover</a>
+        <a class="nav-item" href="/vpn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="9" rx="1.5"/><path d="M6 8V6a4 4 0 0 1 8 0v2"/></svg>VPN</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Firewall</div>
+        <a class="nav-item" href="/rules"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12M4 8h12M4 12h8"/></svg>Rules</a>
+        <a class="nav-item" href="/blocklist"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 17 6v5c0 4-3 6.5-7 8-4-1.5-7-4-7-8V6Z"/><path d="M7 10l2 2 4-4"/></svg>IP Block List</a>
+        <a class="nav-item" href="/nat"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11M13 6l-2.5-2.5M13 6l-2.5 2.5"/><path d="M18 14H7M7 14l2.5-2.5M7 14l2.5 2.5"/></svg>NAT / Port Forwarding</a>
+        <a class="nav-item" href="/nat/1to1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="6" height="8" rx="1.2"/><rect x="11.5" y="6" width="6" height="8" rx="1.2"/></svg>1:1 NAT</a>
+        <a class="nav-item" href="/objects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 10 3l6 0 0 6-7.2 7.2a1.4 1.4 0 0 1-2 0L3 12.2a1.4 1.4 0 0 1 0-2Z"/></svg>Objects</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Services</div>
+        <a class="nav-item" href="/dhcp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="5" rx="1.3"/><rect x="3" y="12" width="14" height="5" rx="1.3"/></svg>DHCP Server</a>
+        <a class="nav-item" href="/dns"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2 2.2 12 0 14M10 3c-2 2-2.2 12 0 14"/></svg>DNS Resolver</a>
+        <a class="nav-item" href="/qos"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a7 7 0 0 1 14 0"/><path d="M10 15V8M10 8l3 2"/></svg>Traffic Shaping</a>
+        <a class="nav-item" href="/snmp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h3l2-5 3 9 2-7 2 3h4"/></svg>SNMP</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V9M9 16V4M14 16v-6M18 16H2"/></svg>NetFlow</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Threat Protection</div>
+        <a class="nav-item" href="/ids"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c2-3.3 5-5 8-5s6 1.7 8 5c-2 3.3-5 5-8 5s-6-1.7-8-5Z"/></svg>Intrusion Detection</a>
+        <a class="nav-item" href="/crowdsec"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.3"/><circle cx="14" cy="8" r="1.8"/></svg>CrowdSec</a>
+        <a class="nav-item" href="/geoblock"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.5S4 12.8 4 8a6 6 0 0 1 12 0c0 4.8-6 9.5-6 9.5Z"/></svg>Country Blocking</a>
+        <a class="nav-item" href="/webfilter"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14l-5.5 7v4.5L8.5 17V11Z"/></svg>Web Filter</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">System</div>
+        <a class="nav-item" href="/services"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="4" rx="1.2"/><rect x="3" y="10" width="14" height="4" rx="1.2"/><circle cx="6" cy="6" r=".6" fill="currentColor"/><circle cx="6" cy="12" r=".6" fill="currentColor"/></svg>Services</a>
+        <a class="nav-item" href="/logs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M4 10h12M4 15h6"/></svg>Logs</a>
+        <a class="nav-item" href="/settings"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"/><path d="M10 3v2M10 15v2M17 10h-2M5 10H3"/></svg>General Settings</a>
+        <a class="nav-item" href="/backup"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v9M6 8l4 4 4-4M4 15h12"/></svg>Backup</a>
+        <a class="nav-item" href="/update"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v6l4-2M10 2v6l-4-2"/><path d="M4 10a6 6 0 1 0 12 0"/><path d="M16 6v4h-4"/></svg>Software Update</a>
+        <a class="nav-item" href="/terminal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="16" height="12" rx="1.5"/><path d="M5.5 8l2.5 2.5-2.5 2.5M10 13h4"/></svg>Terminal</a>
+        <a class="nav-item active" href="/captive-portal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 3a10 10 0 0 1 0 14M10 3a10 10 0 0 0 0 14M3 10h14"/></svg>Captive Portal</a>
+        <a class="nav-item" href="/users"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Users</a>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="avatar">{{ username[:2]|upper }}</div>
+      <div class="who"><b>{{ username }}@stratum</b>Administrator session</div>
+      <a class="logout" href="/logout">Log out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar"><div class="crumb"><b>System</b><span> / </span><b>Captive Portal</b></div></div>
+
+    <div class="content">
+      {% if request.query_params.get('saved') %}
+      <div class="success-banner">Captive portal settings saved successfully.</div>
+      {% endif %}
+      {% if request.query_params.get('error') %}
+      <div class="error-banner">Error: {{ request.query_params.get('error') }}</div>
+      {% endif %}
+
+      <form method="post" action="/captive-portal/save">
+
+        <div class="card">
+          <div class="section-title">Portal Status</div>
+          <div class="info-banner">
+            When enabled, selected interfaces will require authentication via the configured RADIUS server before granting internet access.
+          </div>
+          <div class="toggle-row">
+            <input type="checkbox" id="enabledCheck" name="enabled_checkbox" {% if cp_config.enabled %}checked{% endif %} onchange="document.getElementById('enabledHidden').value = this.checked ? 'true' : 'false';" style="width:auto; transform:scale(1.3);">
+            <input type="hidden" id="enabledHidden" name="enabled" value="{{ 'true' if cp_config.enabled else 'false' }}">
+            <label for="enabledCheck" style="font-size:13px; font-weight:600;">Enable Captive Portal</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Interface Selection</div>
+          <div class="checkbox-list">
+            {% if cp_interfaces %}
+              {% for iface in cp_interfaces %}
+              <label class="checkbox-item">
+                <input type="checkbox" name="interfaces" value="{{ iface.name }}" {% if iface.name in cp_config.interfaces %}checked{% endif %}>
+                <span><b>{{ iface.name }}</b> — {{ iface.role }} ({{ iface.cidr }})</span>
+              </label>
+              {% endfor %}
+            {% else %}
+              <div style="color:var(--ash); font-size:12.5px;">No LAN/OPT interfaces found.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">RADIUS Server</div>
+          <div>
+            <label class="field-label">Authentication Server</label>
+            <select name="radius_server_id">
+              <option value="">-- Select a RADIUS server --</option>
+              {% for srv in radius_servers %}
+              <option value="{{ srv.id }}" {% if srv.id == cp_config.radius_server_id %}selected{% endif %}>{{ srv.name }} ({{ srv.host }})</option>
+              {% endfor %}
+            </select>
+            {% if not radius_servers %}
+            <div style="font-size:11.5px; color:var(--ash); margin-top:6px;">No servers configured yet. Add one in <a href="/settings#radius">General Settings</a>.</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Connection &amp; Session Limits</div>
+          <div class="row">
+            <div>
+              <label class="field-label">Max Concurrent Connections</label>
+              <input type="number" name="max_concurrent_connections" value="{{ cp_config.max_concurrent_connections }}">
+            </div>
+            <div>
+              <label class="field-label">Idle Timeout (minutes)</label>
+              <input type="number" name="idle_timeout_minutes" value="{{ cp_config.idle_timeout_minutes }}">
+            </div>
+            <div>
+              <label class="field-label">Hard Timeout (minutes, 0 = none)</label>
+              <input type="number" name="hard_timeout_minutes" value="{{ cp_config.hard_timeout_minutes }}">
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label class="field-label">Traffic Quota (MB, 0 = none)</label>
+              <input type="number" name="traffic_quota_mb" value="{{ cp_config.traffic_quota_mb }}">
+            </div>
+            <div>
+              <label class="field-label">Max Devices per User</label>
+              <input type="number" name="max_devices_per_user" value="{{ cp_config.max_devices_per_user }}">
+            </div>
+            <div>
+              <label class="field-label">Concurrent Login Policy</label>
+              <select name="concurrent_login_policy">
+                <option value="disabled" {% if cp_config.concurrent_login_policy == 'disabled' %}selected{% endif %}>Disabled - no repeat logins</option>
+                <option value="multiple" {% if cp_config.concurrent_login_policy == 'multiple' %}selected{% endif %}>Multiple - no restriction</option>
+                <option value="last_login" {% if cp_config.concurrent_login_policy == 'last_login' %}selected{% endif %}>Last login wins</option>
+                <option value="first_login" {% if cp_config.concurrent_login_policy == 'first_login' %}selected{% endif %}>First login wins</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">MAC Address Handling</div>
+          <div class="toggle-row">
+            <input type="checkbox" id="macFilterCheck" {% if cp_config.mac_filtering_disabled %}checked{% endif %} onchange="document.getElementById('macFilterHidden').value = this.checked ? 'true' : 'false';" style="width:auto; transform:scale(1.2);">
+            <input type="hidden" id="macFilterHidden" name="mac_filtering_disabled" value="{{ 'true' if cp_config.mac_filtering_disabled else 'false' }}">
+            <label for="macFilterCheck">Disable MAC filtering (required when clients are behind a router)</label>
+          </div>
+          <div class="toggle-row">
+            <input type="checkbox" id="passthroughCheck" {% if cp_config.passthrough_mac_auto_add %}checked{% endif %} onchange="document.getElementById('passthroughHidden').value = this.checked ? 'true' : 'false';" style="width:auto; transform:scale(1.2);">
+            <input type="hidden" id="passthroughHidden" name="passthrough_mac_auto_add" value="{{ 'true' if cp_config.passthrough_mac_auto_add else 'false' }}">
+            <label for="passthroughCheck">Auto-add MAC to passthrough after successful login (skip future logins)</label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Bandwidth Restriction</div>
+          <div class="toggle-row">
+            <input type="checkbox" id="bwCheck" {% if cp_config.bandwidth_limit_enabled %}checked{% endif %} onchange="document.getElementById('bwHidden').value = this.checked ? 'true' : 'false';" style="width:auto; transform:scale(1.2);">
+            <input type="hidden" id="bwHidden" name="bandwidth_limit_enabled" value="{{ 'true' if cp_config.bandwidth_limit_enabled else 'false' }}">
+            <label for="bwCheck">Enable per-user bandwidth restriction</label>
+          </div>
+          <div class="row">
+            <div>
+              <label class="field-label">Default Download (Kbit/s)</label>
+              <input type="number" name="default_download_kbit" value="{{ cp_config.default_download_kbit }}">
+            </div>
+            <div>
+              <label class="field-label">Default Upload (Kbit/s)</label>
+              <input type="number" name="default_upload_kbit" value="{{ cp_config.default_upload_kbit }}">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Redirect URLs</div>
+          <div style="margin-bottom:14px;">
+            <label class="field-label">Pre-Authentication Redirect URL</label>
+            <input type="url" name="pre_auth_redirect_url" value="{{ cp_config.pre_auth_redirect_url }}" placeholder="https://...">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="field-label">After-Authentication Redirect URL (forces destination)</label>
+            <input type="url" name="post_auth_redirect_url" value="{{ cp_config.post_auth_redirect_url }}" placeholder="https://...">
+          </div>
+          <div>
+            <label class="field-label">Blocked MAC Redirect URL</label>
+            <input type="url" name="blocked_mac_redirect_url" value="{{ cp_config.blocked_mac_redirect_url }}" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Portal Page Customization</div>
+          <div class="row">
+            <div>
+              <label class="field-label">Portal Title</label>
+              <input type="text" name="portal_title" value="{{ cp_config.portal_title }}">
+            </div>
+            <div>
+              <label class="field-label">Logo URL</label>
+              <input type="url" name="logo_url" value="{{ cp_config.logo_url }}" placeholder="https://...">
+            </div>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="field-label">Welcome Message</label>
+            <textarea name="portal_message">{{ cp_config.portal_message }}</textarea>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="field-label">Terms of Use Text (optional)</label>
+            <textarea name="terms_text">{{ cp_config.terms_text }}</textarea>
+          </div>
+          <div class="toggle-row" style="margin-top:14px;">
+            <input type="checkbox" id="customPageCheck" {% if cp_config.use_custom_portal_page %}checked{% endif %} onchange="document.getElementById('customPageHidden').value = this.checked ? 'true' : 'false';" style="width:auto; transform:scale(1.2);">
+            <input type="hidden" id="customPageHidden" name="use_custom_portal_page" value="{{ 'true' if cp_config.use_custom_portal_page else 'false' }}">
+            <label for="customPageCheck">Use custom HTML page instead of the default template</label>
+          </div>
+          <div class="toggle-row">
+            <input type="checkbox" id="logoutPopupCheck" {% if cp_config.logout_popup_enabled %}checked{% endif %} onchange="document.getElementById('logoutPopupHidden').value = this.checked ? 'true' : 'false';" style="width:auto; transform:scale(1.2);">
+            <input type="hidden" id="logoutPopupHidden" name="logout_popup_enabled" value="{{ 'true' if cp_config.logout_popup_enabled else 'false' }}">
+            <label for="logoutPopupCheck">Show logout popup window after login</label>
+          </div>
+        </div>
+        <button type="submit" class="btn" style="margin-top:16px;">Save Captive Portal Settings</button>
+      </form>
+
+      <div class="card">
+        <div class="section-title">Portal Page Template</div>
+        <p style="font-size:12.5px; color:var(--ash); margin:0 0 14px;">Upload your own HTML page for the login screen, or use the default Stratum design. The uploaded file must be a single self-contained HTML file (inline CSS, no external assets).</p>
+
+        {% if cp_config.custom_portal_page_path %}
+        <div class="info-banner" style="margin-bottom:14px;">
+          Custom template uploaded: <b>{{ cp_config.custom_portal_page_path.split('/')[-1] }}</b>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="/captive-portal/upload-template" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px;">
+            <label class="field-label">Upload Custom HTML File</label>
+            <input type="file" name="template_file" accept=".html,.htm" required>
+          </div>
+          <button type="submit" class="btn">Upload Template</button>
+        </form>
+
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="/captive-portal/preview" target="_blank" class="btn" style="text-decoration:none; display:inline-block;">Preview Default Template</a>
+          {% if cp_config.custom_portal_page_path %}
+          <a href="/captive-portal/preview?custom=1" target="_blank" class="btn" style="text-decoration:none; display:inline-block;">Preview Custom Template</a>
+          <form method="POST" action="/captive-portal/remove-template" style="display:inline;">
+            <button type="submit" class="btn" style="background:#B23A3A;">Remove Custom Template</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

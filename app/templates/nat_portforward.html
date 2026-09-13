@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E; --blue-line:#2E5D91;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12); --accent-2:#0EA5A0;
+    --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line:#D7DEE8; --line-strong:#C4CEDC; --widget-head:#F4F8FD;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521; --text-dark:#E8EEF7;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; -webkit-font-smoothing:antialiased;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  .shell{display:flex; min-height:100vh;}
+  .sidebar{width:250px; flex-shrink:0; background:var(--blue-900); color:var(--text-dark); display:flex; flex-direction:column;}
+  .brand{display:flex; align-items:center; gap:10px; padding:20px 18px 16px;}
+  .brand-mark{width:32px; height:32px; flex-shrink:0;}
+  .brand-mark svg{width:100%; height:100%;}
+  .brand-name{font-family:var(--font-display); font-weight:600; font-size:15.5px; color:#fff;}
+  .brand-sub{font-size:10.5px; color:#8FA9CB; letter-spacing:.04em; margin-top:1px;}
+  .nav-scroll{flex:1; overflow-y:auto; padding:6px 10px 18px;}
+  .nav-group{margin-top:18px;}
+  .nav-group:first-child{margin-top:4px;}
+  .nav-group-label{font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:#6B87AC; padding:0 10px 7px;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:8px 10px; margin:1px 0; border-radius:7px; color:#B9CBE4; font-size:13px; font-weight:500;}
+  .nav-item svg{width:17px; height:17px; flex-shrink:0; opacity:.85;}
+  .nav-item:hover{background:var(--blue-800); color:#fff;}
+  .nav-item.active{background:var(--accent); color:#fff;}
+  .nav-item.active svg{opacity:1;}
+  .sidebar-foot{padding:14px 18px; border-top:1px solid var(--blue-line); display:flex; align-items:center; gap:9px;}
+  .sidebar-foot .avatar{width:26px; height:26px; border-radius:7px; background:var(--blue-800); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:11px; font-weight:600; color:#fff; border:1px solid var(--blue-line);}
+  .sidebar-foot .who{font-size:11.5px; color:#8FA9CB; line-height:1.3;}
+  .sidebar-foot .who b{color:#fff; font-weight:600; display:block; font-size:12px;}
+  .sidebar-foot .logout{margin-left:auto; color:#8FA9CB; font-size:11px;}
+  .sidebar-foot .logout:hover{color:#fff;}
+  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{height:58px; flex-shrink:0; background:var(--blue-900); display:flex; align-items:center; justify-content:space-between; padding:0 24px;}
+  .crumb b{font-family:var(--font-display); font-weight:600; color:#fff; font-size:15px;}
+  .crumb span{color:#8FA9CB; margin:0 6px;}
+  .content{flex:1; padding:24px 26px 60px; overflow-y:auto; max-width:1200px;}
+
+  .info-banner{display:flex; gap:10px; align-items:flex-start; background:var(--accent-dim); border:1px solid rgba(62,142,237,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#1D5AA3;}
+  .info-banner svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+
+  .page-toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .page-toolbar .count{font-size:12px; color:var(--ash);}
+  .btn{display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:8px; font-size:12.5px; font-weight:600; border:1px solid var(--line-strong); background:var(--paper); color:var(--text);}
+  .btn.primary{background:var(--blue-800); color:#fff; border-color:var(--blue-800);}
+  .btn.primary:hover{background:var(--accent);}
+  .btn svg{width:14px; height:14px;}
+
+  .widget{background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; overflow:hidden; margin-bottom:18px;}
+
+  table.data{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.data th{text-align:left; padding:10px 16px; background:var(--widget-head); color:var(--ash); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--line);}
+  table.data td{padding:11px 16px; border-bottom:1px solid var(--canvas); vertical-align:middle;}
+  table.data tr:last-child td{border-bottom:none;}
+  table.data tr:hover td{background:var(--canvas);}
+  .mono{font-family:var(--font-mono); font-size:12px;}
+  .desc-cell{color:var(--ash); font-size:12px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .empty-row td{text-align:center; color:var(--ash-dark); padding:24px;}
+
+  .pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:20px;}
+  .pill.tcp{background:var(--accent-dim); color:var(--accent);}
+  .pill.udp{background:rgba(240,169,78,.15); color:#B5791C;}
+  .pill.any{background:var(--canvas); color:var(--ash);}
+  .pill.restricted{background:var(--danger-dim); color:var(--danger);}
+
+  .toggle-btn{width:34px; height:19px; border-radius:20px; background:var(--line-strong); position:relative; border:none; padding:0;}
+  .toggle-btn.on{background:var(--accent-2);}
+  .toggle-btn::after{content:''; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:left .15s ease;}
+  .toggle-btn.on::after{left:17px;}
+
+  .row-actions{display:flex; gap:6px; justify-content:flex-end;}
+  .icon-btn{width:26px; height:26px; border-radius:6px; border:1px solid var(--line-strong); background:var(--paper); display:flex; align-items:center; justify-content:center; color:var(--ash);}
+  .icon-btn:hover{background:var(--canvas);}
+  .icon-btn.danger:hover{color:var(--danger);}
+  .icon-btn svg{width:13px; height:13px;}
+  form.inline{display:inline;}
+
+  /* ---- Ekle/Duzenle paneli (acilir/kapanir) ---- */
+  .add-panel{display:none; border-top:1px solid var(--line); padding:18px 16px; background:var(--widget-head);}
+  .add-panel.open{display:block;}
+  .add-panel-title{font-family:var(--font-display); font-weight:600; font-size:12.5px; margin-bottom:14px;}
+  .add-form-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;}
+  .field label{display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase; letter-spacing:.02em;}
+  .field select, .field input{width:100%; padding:9px 11px; border:1.5px solid var(--line-strong); border-radius:7px; font-size:12.5px; font-family:var(--font-body); background:var(--paper);}
+  .field select:focus, .field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim);}
+  .add-form-actions{display:flex; gap:8px; margin-top:14px;}
+
+  .error-banner{display:flex; gap:10px; align-items:flex-start; background:var(--danger-dim); border:1px solid rgba(229,72,77,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#B3232A;}
+  .error-banner svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+  .field-warn{font-size:10.5px; color:var(--danger); margin-top:5px; display:none;}
+  .field-warn.show{display:block;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="4" rx="1.5" fill="#3E8EED"/><rect x="4" y="14" width="24" height="4" rx="1.5" fill="#6FB3F5" opacity=".9"/><rect x="4" y="20" width="24" height="4" rx="1.5" fill="#9DCBFA" opacity=".8"/></svg></div>
+      <div><div class="brand-name">Stratum</div><div class="brand-sub">GATEWAY &middot; v0.1</div></div>
+    </div>
+    <nav class="nav-scroll">
+      <div class="nav-group"><a class="nav-item" href="/"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="3" y="10.5" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.3"/></svg>Overview</a></div>
+      <div class="nav-group"><div class="nav-group-label">Network</div>
+        <a class="nav-item" href="/interfaces"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="1.8"/><circle cx="4" cy="16" r="1.8"/><circle cx="16" cy="16" r="1.8"/><path d="M10 5.8V10M10 10L4 14.3M10 10l6 4.3"/></svg>Interfaces &amp; VLANs</a>
+        <a class="nav-item"         <a class="nav-item" href="/multi-wan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-5 5-8 8-8s6.5 3 8 8"/><path d="M2 12l3-1.2M18 12l-3-1.2"/><circle cx="10" cy="15.5" r="1.6"/></svg>Multi-WAN &amp; Failover</a>
+        <a class="nav-item" href="/vpn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="9" rx="1.5"/><path d="M6 8V6a4 4 0 0 1 8 0v2"/></svg>VPN</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Firewall</div>
+        <a class="nav-item" href="/rules"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12M4 8h12M4 12h8"/></svg>Rules</a>
+        <a class="nav-item" href="/blocklist"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 17 6v5c0 4-3 6.5-7 8-4-1.5-7-4-7-8V6Z"/><path d="M7 10l2 2 4-4"/></svg>IP Block List</a>
+        <a class="nav-item" href="/nat"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11M13 6l-2.5-2.5M13 6l-2.5 2.5"/><path d="M18 14H7M7 14l2.5-2.5M7 14l2.5 2.5"/></svg>NAT / Port Forwarding</a>
+        <a class="nav-item" href="/nat/1to1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="6" height="8" rx="1.2"/><rect x="11.5" y="6" width="6" height="8" rx="1.2"/></svg>1:1 NAT</a>
+        <a class="nav-item" href="/objects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 10 3l6 0 0 6-7.2 7.2a1.4 1.4 0 0 1-2 0L3 12.2a1.4 1.4 0 0 1 0-2Z"/></svg>Objects</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Services</div>
+        <a class="nav-item" href="/dhcp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="5" rx="1.3"/><rect x="3" y="12" width="14" height="5" rx="1.3"/></svg>DHCP Server</a>
+        <a class="nav-item" href="/dns"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2 2.2 12 0 14M10 3c-2 2-2.2 12 0 14"/></svg>DNS Resolver</a>
+        <a class="nav-item" href="/qos"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a7 7 0 0 1 14 0"/><path d="M10 15V8M10 8l3 2"/></svg>Traffic Shaping</a>
+        <a class="nav-item" href="/snmp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h3l2-5 3 9 2-7 2 3h4"/></svg>SNMP</a>
+        <a class="nav-item" href="/netflow"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V9M9 16V4M14 16v-6M18 16H2"/></svg>NetFlow</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Threat Protection</div>
+        <a class="nav-item" href="/ids"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c2-3.3 5-5 8-5s6 1.7 8 5c-2 3.3-5 5-8 5s-6-1.7-8-5Z"/></svg>Intrusion Detection</a>
+        <a class="nav-item" href="/crowdsec"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.3"/><circle cx="14" cy="8" r="1.8"/></svg>CrowdSec</a>
+        <a class="nav-item" href="/geoblock"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.5S4 12.8 4 8a6 6 0 0 1 12 0c0 4.8-6 9.5-6 9.5Z"/></svg>Country Blocking</a>
+        <a class="nav-item" href="/webfilter"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14l-5.5 7v4.5L8.5 17V11Z"/></svg>Web Filter</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">System</div>
+        <a class="nav-item" href="/services"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="4" rx="1.2"/><rect x="3" y="10" width="14" height="4" rx="1.2"/><circle cx="6" cy="6" r=".6" fill="currentColor"/><circle cx="6" cy="12" r=".6" fill="currentColor"/></svg>Services</a>
+        <a class="nav-item" href="/logs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M4 10h12M4 15h6"/></svg>Logs</a>
+        <a class="nav-item" href="/settings"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"/><path d="M10 3v2M10 15v2M17 10h-2M5 10H3"/></svg>General Settings</a>
+        <a class="nav-item" href="/backup"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v9M6 8l4 4 4-4M4 15h12"/></svg>Backup</a>
+        <a class="nav-item" href="/update"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v6l4-2M10 2v6l-4-2"/><path d="M4 10a6 6 0 1 0 12 0"/><path d="M16 6v4h-4"/></svg>Software Update</a>
+        <a class="nav-item" href="/terminal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="16" height="12" rx="1.5"/><path d="M5.5 8l2.5 2.5-2.5 2.5M10 13h4"/></svg>Terminal</a>
+        <a class="nav-item" href="/captive-portal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 3a10 10 0 0 1 0 14M10 3a10 10 0 0 0 0 14M3 10h14"/></svg>Captive Portal</a>
+        <a class="nav-item" href="/users"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Users</a>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="avatar">{{ username[:2]|upper }}</div>
+      <div class="who"><b>{{ username }}@stratum</b>Administrator session</div>
+      <a class="logout" href="/logout">Log out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar"><div class="crumb"><b>Firewall</b><span>/</span><b>NAT / Port Forwarding</b></div></div>
+    <div class="content">
+
+      <div class="info-banner">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="M10 8.5v5M10 6.3v.1"/></svg>
+        <span>Each rule can optionally have a <b>source IP restriction</b> and can be <b>disabled</b> without deleting the NAT mapping. Changes apply immediately via nftables.</span>
+      </div>
+
+      {% if error %}
+      <div class="error-banner">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="M10 8.5v5M10 6.3v.1"/></svg>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <div class="page-toolbar">
+        <span class="count">{{ portforward_rules|length }} rule{{ 's' if portforward_rules|length != 1 else '' }} defined</span>
+        <button class="btn primary" onclick="openAddPanel()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
+          Add Rule
+        </button>
+      </div>
+
+      <div class="widget">
+        <table class="data">
+          <tr><th>Protocol</th><th>Ext. Port</th><th>Internal Address</th><th>Local Iface</th><th>WAN</th><th>Source</th><th>Description</th><th>Status</th><th></th></tr>
+          {% for r in portforward_rules %}
+          <tr>
+            <td><span class="pill {{ 'tcp' if r.proto == 'tcp' else 'udp' }}">{{ r.proto|upper }}</span></td>
+            <td class="mono">{{ r.ext_port }}</td>
+            <td class="mono">{{ r.internal_ip }} : {{ r.internal_port }}</td>
+            <td class="mono">{{ '*' if r.local_iface == 'any' else r.local_iface }}</td>
+            <td><span class="pill any">{{ '*' if r.wan_iface == 'any' else r.wan_iface }}</span></td>
+            <td>
+              {% if r.allowed_source in ['any', ''] %}
+                <span class="pill any">*</span>
+              {% else %}
+                <span class="pill restricted">{{ r.allowed_source }}</span>
+              {% endif %}
+            </td>
+            <td class="desc-cell" title="{{ r.description }}">{{ r.description or '&mdash;' }}</td>
+            <td>
+              <form class="inline" method="post" action="/nat/portforward/toggle">
+                <input type="hidden" name="proto" value="{{ r.proto }}">
+                <input type="hidden" name="ext_port" value="{{ r.ext_port }}">
+                <input type="hidden" name="action" value="{{ 'disable' if r.enabled else 'enable' }}">
+                <button type="submit" class="toggle-btn {{ 'on' if r.enabled else '' }}"></button>
+              </form>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button class="icon-btn" title="Edit"
+                  onclick='openEditPanel({{ {"proto": r.proto, "ext_port": r.ext_port, "internal_ip": r.internal_ip, "internal_port": r.internal_port, "allowed_source": r.allowed_source, "description": r.description, "wan_iface": r.wan_iface, "local_iface": r.local_iface}|tojson }})'>
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 3.5 16 7l-9 9H3.5v-3.5Z"/></svg>
+                </button>
+                <form class="inline" method="post" action="/nat/portforward/delete" onsubmit="return confirm('Delete this port forward rule?');">
+                  <input type="hidden" name="proto" value="{{ r.proto }}">
+                  <input type="hidden" name="ext_port" value="{{ r.ext_port }}">
+                  <button type="submit" class="icon-btn danger" title="Delete"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4h4v2M6 6l.7 9h6.6L14 6"/></svg></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="9">No port forwarding rules defined yet.</td></tr>
+          {% endfor %}
+        </table>
+
+        <div class="add-panel" id="addPanel">
+          <div class="add-panel-title" id="addPanelTitle">Add Port Forward Rule</div>
+          <form method="post" action="/nat/portforward/add" id="addForm">
+            <input type="hidden" name="_orig_proto" id="f_orig_proto">
+            <input type="hidden" name="_orig_ext_port" id="f_orig_ext_port">
+            <div class="add-form-grid">
+              <div class="field"><label>Protocol</label><select name="proto" id="f_proto"><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
+              <div class="field">
+                <label>Ext. Port Type</label>
+                <select id="f_ext_port_type" onchange="toggleExtPortType()">
+                  <option value="port">Port</option>
+                  <option value="alias">Alias</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Ext. Port</label>
+                <input type="number" name="ext_port" id="f_ext_port" min="1" max="65535" placeholder="8443">
+                <select name="ext_port" id="f_ext_port_alias_select" style="display:none;" disabled>
+                  <option value="">-- select alias --</option>
+                  {% for obj in port_objects %}<option value="alias:{{ obj.name }}">{{ obj.name }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="field"><label>Local Interface</label><select name="local_iface" id="f_local_iface" onchange="validateInternalIp()"><option value="any">Any / Unknown</option>{% for l in lan_ifaces %}<option value="{{ l.name }}" data-cidr="{{ l.cidr }}">{{ l.name }} &mdash; {{ l.role }}</option>{% endfor %}</select></div>
+              <div class="field">
+                <label>Internal IP</label>
+                <input type="text" name="internal_ip" id="f_internal_ip" required placeholder="10.10.20.101" oninput="validateInternalIp()">
+                <div class="field-warn" id="ip-warn"></div>
+              </div>
+              <div class="field"><label>Internal Port</label><input type="number" name="internal_port" id="f_internal_port" min="1" max="65535" required placeholder="443"></div>
+              <div class="field"><label>WAN Interface</label><select name="wan_iface" id="f_wan_iface"><option value="any">Any WAN</option>{% for w in wan_ifaces %}<option value="{{ w }}">{{ w }}</option>{% endfor %}</select></div>
+              <div class="field">
+                <label>Source Type</label>
+                <select id="f_source_type" onchange="toggleSourceType()">
+                  <option value="address">Address</option>
+                  <option value="alias">Alias</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Source</label>
+                <input type="text" name="source" id="f_source" placeholder="any or CIDR">
+                <select name="source" id="f_source_alias_select" style="display:none;" disabled>
+                  <option value="">-- select alias --</option>
+                  {% for obj in address_objects %}<option value="alias:{{ obj.name }}">{{ obj.name }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="field"><label>Description (optional)</label><input type="text" name="description" id="f_description" placeholder="e.g. SSH to backup server"></div>
+            </div>
+            <div class="add-form-actions">
+              <button type="submit" class="btn primary" id="f_submit">Add Rule</button>
+              <button type="button" class="btn" onclick="closeAddPanel()">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleExtPortType() {
+    const type = document.getElementById('f_ext_port_type').value;
+    const literalInput = document.getElementById('f_ext_port');
+    const aliasSelect = document.getElementById('f_ext_port_alias_select');
+    if (type === 'alias') {
+      literalInput.style.display = 'none'; literalInput.disabled = true; literalInput.required = false;
+      aliasSelect.style.display = ''; aliasSelect.disabled = false;
+    } else {
+      literalInput.style.display = ''; literalInput.disabled = false; literalInput.required = true;
+      aliasSelect.style.display = 'none'; aliasSelect.disabled = true;
+    }
+  }
+  function toggleSourceType() {
+    const type = document.getElementById('f_source_type').value;
+    const literalInput = document.getElementById('f_source');
+    const aliasSelect = document.getElementById('f_source_alias_select');
+    if (type === 'alias') {
+      literalInput.style.display = 'none'; literalInput.disabled = true;
+      aliasSelect.style.display = ''; aliasSelect.disabled = false;
+    } else {
+      literalInput.style.display = ''; literalInput.disabled = false;
+      aliasSelect.style.display = 'none'; aliasSelect.disabled = true;
+    }
+  }
+  function openAddPanel() {
+    document.getElementById('addPanelTitle').textContent = 'Add Port Forward Rule';
+    document.getElementById('f_submit').textContent = 'Add Rule';
+    document.getElementById('addForm').reset();
+    document.getElementById('f_source_type').value = 'address';
+    toggleSourceType();
+    document.getElementById('f_ext_port_type').value = 'port';
+    toggleExtPortType();
+    document.getElementById('addPanel').classList.add('open');
+    document.getElementById('addPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+  function closeAddPanel() {
+    document.getElementById('addPanel').classList.remove('open');
+  }
+  function openEditPanel(rule) {
+    document.getElementById('addPanelTitle').textContent = 'Edit Port Forward Rule';
+    document.getElementById('f_submit').textContent = 'Save Changes';
+    document.getElementById('f_proto').value = rule.proto;
+    if (rule.ext_port && rule.ext_port.toString().startsWith('alias:')) {
+      document.getElementById('f_ext_port_type').value = 'alias';
+      toggleExtPortType();
+      document.getElementById('f_ext_port_alias_select').value = rule.ext_port;
+    } else {
+      document.getElementById('f_ext_port_type').value = 'port';
+      toggleExtPortType();
+      document.getElementById('f_ext_port').value = rule.ext_port;
+    }
+    document.getElementById('f_internal_ip').value = rule.internal_ip;
+    document.getElementById('f_internal_port').value = rule.internal_port;
+    if (rule.allowed_source && rule.allowed_source.startsWith('alias:')) {
+      document.getElementById('f_source_type').value = 'alias';
+      toggleSourceType();
+      document.getElementById('f_source_alias_select').value = rule.allowed_source;
+    } else {
+      document.getElementById('f_source_type').value = 'address';
+      toggleSourceType();
+      document.getElementById('f_source').value = rule.allowed_source;
+    }
+    document.getElementById('f_description').value = rule.description;
+    document.getElementById('f_wan_iface').value = rule.wan_iface;
+    document.getElementById('f_local_iface').value = rule.local_iface;
+    document.getElementById('addPanel').classList.add('open');
+    document.getElementById('addPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+    validateInternalIp();
+  }
+
+  function ipToInt(ip) {
+    const parts = ip.split('.').map(Number);
+    if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) return null;
+    return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+  }
+
+  function isIpInCidr(ip, cidr) {
+    const [base, bits] = cidr.split('/');
+    const ipInt = ipToInt(ip);
+    const baseInt = ipToInt(base);
+    if (ipInt === null || baseInt === null) return false;
+    const mask = bits == 0 ? 0 : (~0 << (32 - parseInt(bits))) >>> 0;
+    return (ipInt & mask) === (baseInt & mask);
+  }
+
+  function validateInternalIp() {
+    const select = document.getElementById('f_local_iface');
+    const ipInput = document.getElementById('f_internal_ip');
+    const warn = document.getElementById('ip-warn');
+    const cidr = select.options[select.selectedIndex].getAttribute('data-cidr');
+    const ip = ipInput.value.trim();
+
+    if (!cidr || !ip) {
+      warn.classList.remove('show');
+      ipInput.style.borderColor = '';
+      return;
+    }
+    if (!isIpInCidr(ip, cidr)) {
+      warn.textContent = `Not within ${select.value}'s subnet (${cidr})`;
+      warn.classList.add('show');
+      ipInput.style.borderColor = 'var(--danger)';
+    } else {
+      warn.classList.remove('show');
+      ipInput.style.borderColor = 'var(--accent-2)';
+    }
+  }
+</script>
+</body>
+</html>

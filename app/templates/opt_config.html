@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12);
+    --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line-strong:#C4CEDC;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;}
+  .card{background:var(--paper); border:1px solid var(--line-strong); border-radius:12px; max-width:480px; width:100%; overflow:hidden; box-shadow:0 4px 20px rgba(16,21,33,.08);}
+  .card-head{background:var(--blue-900); color:#fff; padding:18px 24px;}
+  .card-head h1{font-family:var(--font-display); font-size:16px; font-weight:600;}
+  .card-head p{font-size:11.5px; color:#8FA9CB; margin-top:2px;}
+  .card-body{padding:24px;}
+  .error-banner{background:var(--danger-dim); border:1px solid rgba(229,72,77,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#B3232A;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:11px; font-weight:600; color:var(--ash); margin-bottom:6px; text-transform:uppercase; letter-spacing:.02em;}
+  .field input{width:100%; padding:10px 12px; border:1.5px solid var(--line-strong); border-radius:8px; font-size:13px;}
+  .field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim);}
+  .field-row{display:grid; grid-template-columns:2fr 1fr; gap:10px;}
+  .actions{display:flex; gap:10px; margin-top:22px;}
+  .btn{flex:1; padding:11px 16px; border-radius:8px; font-size:12.5px; font-weight:600; border:1px solid var(--line-strong); background:var(--paper); color:var(--text); text-align:center; cursor:pointer; text-decoration:none;}
+  .btn.primary{background:var(--blue-800); color:#fff; border-color:var(--blue-800);}
+  .btn.primary:hover{background:var(--accent);}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-head">
+      <h1>OPT Configuration: {{ iface_name }}</h1>
+      <p>Independent network segment &mdash; not part of the VLAN trunk</p>
+    </div>
+    <div class="card-body">
+      {% if error %}
+      <div class="error-banner">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="/interfaces/opt-config/{{ iface_name }}">
+        <div class="field">
+          <label>Interface Name (system-level)</label>
+          <input type="text" name="new_name" value="{{ iface_name }}" placeholder="guest-net" pattern="[a-zA-Z0-9_-]{1,15}" title="Only letters, numbers, hyphens - max 15 characters">
+        </div>
+
+        <div class="field">
+          <label>Display Name</label>
+          <input type="text" name="display_name" value="{{ display_name }}" placeholder="Guest Network">
+        </div>
+
+        <div class="field">
+          <label>Description (optional)</label>
+          <input type="text" name="description" value="{{ description }}" placeholder="e.g. staff lounge Wi-Fi access point">
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label>Gateway IP</label>
+            <input type="text" name="gateway_ip" value="{{ gateway_ip }}" placeholder="10.10.70.1">
+          </div>
+          <div>
+            <label>Prefix</label>
+            <input type="text" name="prefix" value="{{ prefix }}" placeholder="24">
+          </div>
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label>DHCP Start</label>
+            <input type="text" name="dhcp_start" value="{{ dhcp_start }}" placeholder="10.10.70.10">
+          </div>
+          <div>
+            <label>DHCP End</label>
+            <input type="text" name="dhcp_end" value="{{ dhcp_end }}" placeholder="10.10.70.200">
+          </div>
+        </div>
+
+        <div class="actions">
+          <a href="/interfaces" class="btn">Cancel</a>
+          <button type="submit" class="btn primary">Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

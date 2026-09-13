@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12);
+    --amber:#F0A94E; --amber-dim:rgba(240,169,78,.15); --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line:#D7DEE8; --line-strong:#C4CEDC;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;}
+  .card{background:var(--paper); border:1px solid var(--line-strong); border-radius:12px; max-width:520px; width:100%; overflow:hidden; box-shadow:0 4px 20px rgba(16,21,33,.08);}
+  .card-head{background:var(--blue-900); color:#fff; padding:18px 24px;}
+  .card-head h1{font-family:var(--font-display); font-size:16px; font-weight:600;}
+  .card-head p{font-size:11.5px; color:#8FA9CB; margin-top:2px;}
+  .card-body{padding:24px;}
+  .warn-banner{display:flex; gap:10px; align-items:flex-start; background:var(--amber-dim); border:1px solid rgba(240,169,78,.4); border-radius:10px; padding:14px 16px; margin-bottom:20px; font-size:12px; color:#8A5A16;}
+  .warn-banner svg{width:18px; height:18px; flex-shrink:0; margin-top:1px;}
+  .error-banner{display:flex; gap:10px; align-items:flex-start; background:var(--danger-dim); border:1px solid rgba(229,72,77,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#B3232A;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:11px; font-weight:600; color:var(--ash); margin-bottom:6px; text-transform:uppercase; letter-spacing:.02em;}
+  .field input{width:100%; padding:10px 12px; border:1.5px solid var(--line-strong); border-radius:8px; font-size:13px; font-family:var(--font-mono);}
+  .field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim);}
+  .field .current{font-size:11px; color:var(--ash-dark); margin-top:5px; font-family:var(--font-mono);}
+  .actions{display:flex; gap:10px; margin-top:22px;}
+  .btn{flex:1; padding:11px 16px; border-radius:8px; font-size:12.5px; font-weight:600; border:1px solid var(--line-strong); background:var(--paper); color:var(--text); text-align:center; cursor:pointer;}
+  .btn.primary{background:var(--blue-800); color:#fff; border-color:var(--blue-800);}
+  .btn.primary:hover{background:var(--accent);}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-head">
+      <h1>Edit Interface: {{ iface_name }}</h1>
+      <p>Gateway IP / subnet (CIDR)</p>
+    </div>
+    <div class="card-body">
+      <div class="warn-banner">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 2 18 16H2Z"/><path d="M10 8v4M10 14.5v.1"/></svg>
+        <span>This change applies immediately but is <b>not permanent until you confirm it</b>. If you lose access (e.g. because the new address is wrong), it will <b>automatically revert within 90 seconds</b>.</span>
+      </div>
+
+      {% if error %}
+      <div class="error-banner">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="/interfaces/edit/{{ iface_name }}">
+        <div class="field">
+          <label>Interface Name (optional)</label>
+          <input type="text" name="new_iface_name" placeholder="{{ iface_name }}">
+          <small style="color:var(--ash-dark); font-size:11px;">Leave blank to keep current name.</small>
+        </div>
+
+        <div class="field">
+          <label>New Gateway IP / CIDR</label>
+          <input type="text" name="new_cidr" value="{{ current_cidr }}" required placeholder="10.10.20.1/24">
+          <div class="current">Current: {{ current_cidr }}</div>
+        </div>
+        <div class="actions">
+          <a href="/interfaces" class="btn">Cancel</a>
+          <button type="submit" class="btn primary">Apply (90s to confirm)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E; --blue-line:#2E5D91;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12); --accent-2:#0EA5A0;
+    --danger:#E5484D; --danger-dim:rgba(229,72,77,.12); --amber:#F0A94E; --amber-dim:rgba(240,169,78,.15);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line:#D7DEE8; --line-strong:#C4CEDC; --widget-head:#F4F8FD;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521; --text-dark:#E8EEF7;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; -webkit-font-smoothing:antialiased;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  .shell{display:flex; min-height:100vh;}
+  .sidebar{width:250px; flex-shrink:0; background:var(--blue-900); color:var(--text-dark); display:flex; flex-direction:column;}
+  .brand{display:flex; align-items:center; gap:10px; padding:20px 18px 16px;}
+  .brand-mark{width:32px; height:32px; flex-shrink:0;}
+  .brand-mark svg{width:100%; height:100%;}
+  .brand-name{font-family:var(--font-display); font-weight:600; font-size:15.5px; color:#fff;}
+  .brand-sub{font-size:10.5px; color:#8FA9CB; letter-spacing:.04em; margin-top:1px;}
+  .nav-scroll{flex:1; overflow-y:auto; padding:6px 10px 18px;}
+  .nav-group{margin-top:18px;}
+  .nav-group:first-child{margin-top:4px;}
+  .nav-group-label{font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:#6B87AC; padding:0 10px 7px;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:8px 10px; margin:1px 0; border-radius:7px; color:#B9CBE4; font-size:13px; font-weight:500;}
+  .nav-item svg{width:17px; height:17px; flex-shrink:0; opacity:.85;}
+  .nav-item:hover{background:var(--blue-800); color:#fff;}
+  .nav-item.active{background:var(--accent); color:#fff;}
+  .nav-item.active svg{opacity:1;}
+  .sidebar-foot{padding:14px 18px; border-top:1px solid var(--blue-line); display:flex; align-items:center; gap:9px;}
+  .sidebar-foot .avatar{width:26px; height:26px; border-radius:7px; background:var(--blue-800); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:11px; font-weight:600; color:#fff; border:1px solid var(--blue-line);}
+  .sidebar-foot .who{font-size:11.5px; color:#8FA9CB; line-height:1.3;}
+  .sidebar-foot .who b{color:#fff; font-weight:600; display:block; font-size:12px;}
+  .sidebar-foot .logout{margin-left:auto; color:#8FA9CB; font-size:11px;}
+  .sidebar-foot .logout:hover{color:#fff;}
+  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{height:58px; flex-shrink:0; background:var(--blue-900); display:flex; align-items:center; justify-content:space-between; padding:0 24px;}
+  .crumb b{font-family:var(--font-display); font-weight:600; color:#fff; font-size:15px;}
+  .crumb span{color:#8FA9CB; margin:0 6px;}
+  .content{flex:1; padding:24px 26px 60px; overflow-y:auto; max-width:1200px;}
+
+  .info-banner{display:flex; gap:10px; align-items:flex-start; background:var(--accent-dim); border:1px solid rgba(62,142,237,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#1D5AA3;}
+  .info-banner svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+  .error-banner{display:flex; gap:10px; align-items:flex-start; background:var(--danger-dim); border:1px solid rgba(229,72,77,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#B3232A;}
+
+  .stat-row{display:flex; gap:14px; margin-bottom:18px;}
+  .stat-box{flex:1; background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; text-align:center;}
+  .stat-box b{display:block; font-family:var(--font-display); font-size:22px; font-weight:600;}
+  .stat-box span{font-size:10px; color:var(--ash); text-transform:uppercase; letter-spacing:.03em;}
+
+  .page-toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+  .page-toolbar .count{font-size:12px; color:var(--ash);}
+  .btn{display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:8px; font-size:12.5px; font-weight:600; border:1px solid var(--line-strong); background:var(--paper); color:var(--text);}
+  .btn.primary{background:var(--blue-800); color:#fff; border-color:var(--blue-800);}
+  .btn.primary:hover{background:var(--accent);}
+
+  .widget{background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; overflow:hidden; margin-bottom:18px;}
+  table.data{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.data th{text-align:left; padding:10px 16px; background:var(--widget-head); color:var(--ash); font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--line);}
+  table.data td{padding:11px 16px; border-bottom:1px solid var(--canvas); vertical-align:middle;}
+  table.data tr:last-child td{border-bottom:none;}
+  table.data tr:hover td{background:var(--canvas);}
+  .mono{font-family:var(--font-mono); font-size:12px;}
+  .empty-row td{text-align:center; color:var(--ash-dark); padding:24px;}
+
+  .pill{display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:20px; background:var(--canvas); color:var(--ash);}
+
+  .toggle-btn{width:34px; height:19px; border-radius:20px; background:var(--line-strong); position:relative; border:none; padding:0;}
+  .toggle-btn.on{background:var(--accent-2);}
+  .toggle-btn::after{content:''; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:left .15s ease;}
+  .toggle-btn.on::after{left:17px;}
+
+  .icon-btn{width:26px; height:26px; border-radius:6px; border:1px solid var(--line-strong); background:var(--paper); display:flex; align-items:center; justify-content:center; color:var(--ash);}
+  .icon-btn:hover{background:var(--canvas); color:var(--danger);}
+  .icon-btn svg{width:13px; height:13px;}
+  form.inline{display:inline;}
+
+  .add-panel{display:none; border-top:1px solid var(--line); padding:18px 16px; background:var(--widget-head);}
+  .add-panel.open{display:block;}
+  .add-panel-title{font-family:var(--font-display); font-weight:600; font-size:12.5px; margin-bottom:14px;}
+  .add-form-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;}
+  .field label{display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase; letter-spacing:.02em;}
+  .field select, .field input{width:100%; padding:9px 11px; border:1.5px solid var(--line-strong); border-radius:7px; font-size:12.5px; font-family:var(--font-body); background:var(--paper);}
+  .field select:focus, .field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim);}
+  .add-form-actions{display:flex; gap:8px; margin-top:14px;}
+
+  .code-block{background:#101521; color:#D8E2F0; font-family:var(--font-mono); font-size:11px; line-height:1.6; padding:14px 16px; overflow:auto; white-space:pre; max-height:320px;}
+  .log-status{display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12px;}
+  .log-status.ok{color:var(--accent-2);}
+  .log-status.fail{color:var(--danger);}
+
+  details.widget{margin-bottom:14px;}
+  details.widget summary{display:flex; align-items:center; gap:10px; padding:13px 16px; background:var(--widget-head); border-bottom:1px solid var(--line); cursor:pointer; list-style:none;}
+  details.widget summary::-webkit-details-marker{display:none;}
+  details.widget summary::after{content:'\25BC'; font-size:9px; color:var(--ash-dark); flex-shrink:0;}
+  details.widget[open] summary::after{content:'\25B2';}
+  details.widget summary .widget-title{white-space:nowrap;}
+  details.widget summary .feed-count{white-space:nowrap; margin-right:auto;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="4" rx="1.5" fill="#3E8EED"/><rect x="4" y="14" width="24" height="4" rx="1.5" fill="#6FB3F5" opacity=".9"/><rect x="4" y="20" width="24" height="4" rx="1.5" fill="#9DCBFA" opacity=".8"/></svg></div>
+      <div><div class="brand-name">Stratum</div><div class="brand-sub">GATEWAY &middot; v0.1</div></div>
+    </div>
+    <nav class="nav-scroll">
+      <div class="nav-group"><a class="nav-item" href="/"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="3" y="10.5" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.3"/></svg>Overview</a></div>
+      <div class="nav-group"><div class="nav-group-label">Network</div>
+        <a class="nav-item" href="/interfaces"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="1.8"/><circle cx="4" cy="16" r="1.8"/><circle cx="16" cy="16" r="1.8"/><path d="M10 5.8V10M10 10L4 14.3M10 10l6 4.3"/></svg>Interfaces &amp; VLANs</a>
+        <a class="nav-item"         <a class="nav-item" href="/multi-wan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-5 5-8 8-8s6.5 3 8 8"/><path d="M2 12l3-1.2M18 12l-3-1.2"/><circle cx="10" cy="15.5" r="1.6"/></svg>Multi-WAN &amp; Failover</a>
+        <a class="nav-item" href="/vpn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="9" rx="1.5"/><path d="M6 8V6a4 4 0 0 1 8 0v2"/></svg>VPN</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Firewall</div>
+        <a class="nav-item" href="/rules"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12M4 8h12M4 12h8"/></svg>Rules</a>
+        <a class="nav-item" href="/blocklist"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 17 6v5c0 4-3 6.5-7 8-4-1.5-7-4-7-8V6Z"/><path d="M7 10l2 2 4-4"/></svg>IP Block List</a>
+        <a class="nav-item" href="/nat"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11M13 6l-2.5-2.5M13 6l-2.5 2.5"/><path d="M18 14H7M7 14l2.5-2.5M7 14l2.5 2.5"/></svg>NAT / Port Forwarding</a>
+        <a class="nav-item" href="/nat/1to1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="6" height="8" rx="1.2"/><rect x="11.5" y="6" width="6" height="8" rx="1.2"/></svg>1:1 NAT</a>
+        <a class="nav-item" href="/objects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 10 3l6 0 0 6-7.2 7.2a1.4 1.4 0 0 1-2 0L3 12.2a1.4 1.4 0 0 1 0-2Z"/></svg>Objects</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Services</div>
+        <a class="nav-item" href="/dhcp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="5" rx="1.3"/><rect x="3" y="12" width="14" height="5" rx="1.3"/></svg>DHCP Server</a>
+        <a class="nav-item" href="/dns"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2 2.2 12 0 14M10 3c-2 2-2.2 12 0 14"/></svg>DNS Resolver</a>
+        <a class="nav-item" href="/qos"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a7 7 0 0 1 14 0"/><path d="M10 15V8M10 8l3 2"/></svg>Traffic Shaping</a>
+        <a class="nav-item" href="/snmp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h3l2-5 3 9 2-7 2 3h4"/></svg>SNMP</a>
+        <a class="nav-item" href="/netflow"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V9M9 16V4M14 16v-6M18 16H2"/></svg>NetFlow</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Threat Protection</div>
+        <a class="nav-item" href="/ids"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c2-3.3 5-5 8-5s6 1.7 8 5c-2 3.3-5 5-8 5s-6-1.7-8-5Z"/></svg>Intrusion Detection</a>
+        <a class="nav-item" href="/crowdsec"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.3"/><circle cx="14" cy="8" r="1.8"/></svg>CrowdSec</a>
+        <a class="nav-item" href="/geoblock"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.5S4 12.8 4 8a6 6 0 0 1 12 0c0 4.8-6 9.5-6 9.5Z"/></svg>Country Blocking</a>
+        <a class="nav-item" href="/webfilter"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14l-5.5 7v4.5L8.5 17V11Z"/></svg>Web Filter</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">System</div>
+        <a class="nav-item" href="/services"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="4" rx="1.2"/><rect x="3" y="10" width="14" height="4" rx="1.2"/><circle cx="6" cy="6" r=".6" fill="currentColor"/><circle cx="6" cy="12" r=".6" fill="currentColor"/></svg>Services</a>
+        <a class="nav-item" href="/logs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M4 10h12M4 15h6"/></svg>Logs</a>
+        <a class="nav-item" href="/settings"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"/><path d="M10 3v2M10 15v2M17 10h-2M5 10H3"/></svg>General Settings</a>
+        <a class="nav-item" href="/backup"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v9M6 8l4 4 4-4M4 15h12"/></svg>Backup</a>
+        <a class="nav-item" href="/update"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v6l4-2M10 2v6l-4-2"/><path d="M4 10a6 6 0 1 0 12 0"/><path d="M16 6v4h-4"/></svg>Software Update</a>
+        <a class="nav-item" href="/terminal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="16" height="12" rx="1.5"/><path d="M5.5 8l2.5 2.5-2.5 2.5M10 13h4"/></svg>Terminal</a>
+        <a class="nav-item" href="/captive-portal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 3a10 10 0 0 1 0 14M10 3a10 10 0 0 0 0 14M3 10h14"/></svg>Captive Portal</a>
+        <a class="nav-item" href="/users"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Users</a>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="avatar">{{ username[:2]|upper }}</div>
+      <div class="who"><b>{{ username }}@stratum</b>Administrator session</div>
+      <a class="logout" href="/logout">Log out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar"><div class="crumb"><b>Services</b><span>/</span><b>DNS Resolver</b></div></div>
+    <div class="content">
+
+      <div class="info-banner">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="M10 8.5v5M10 6.3v.1"/></svg>
+        <span>DNSBL Feeds are threat-intelligence blocklists. By default they apply to <b>all networks, always</b> &mdash; but each feed's <b>Scope</b> can be restricted to specific VLANs (click the scope badge in the table) if it's too aggressive for guest or mobile devices. Add any domain-list feed URL below; it will be downloaded, validated, and applied automatically.</span>
+      </div>
+
+      {% if error %}
+      <div class="error-banner">{{ error }}</div>
+      {% endif %}
+
+      <div class="stat-row">
+        <div class="stat-box"><b>{{ "{:,}".format(dns_stats.queries).replace(",", ".") if dns_stats.queries is not none else '&mdash;' }}</b><span>Queries</span></div>
+        <div class="stat-box"><b>{{ dns_stats.cache_hit_rate if dns_stats.cache_hit_rate is not none else '&mdash;' }}%</b><span>Cache Hit</span></div>
+        <div class="stat-box"><b>{{ "{:,}".format(dns_stats.rpz_domains).replace(",", ".") }}</b><span>Web Filter Domains</span></div>
+        <div class="stat-box"><b>{{ "{:,}".format(feeds|sum(attribute='record_count')).replace(",", ".") }}</b><span>DNSBL Feed Domains</span></div>
+      </div>
+
+      <div class="page-toolbar">
+        <span class="count">DNSBL Feeds &middot; {{ feeds|length }} defined</span>
+        <div style="display:flex; gap:8px;">
+          <a href="/dns/catalog" class="btn">Browse Feed Catalog</a>
+          <form method="post" action="/dns/feed/update">
+            <button type="submit" class="btn">Update All Feeds Now</button>
+          </form>
+          <button class="btn primary" onclick="openAddPanel()">Add Feed</button>
+        </div>
+      </div>
+
+      <div class="widget">
+        <table class="data">
+          <tr><th>Group</th><th>Name</th><th>Website</th><th>Records</th><th>Scope</th><th>Status</th><th></th></tr>
+          {% for f in feeds %}
+          <tr>
+            <td><span class="pill">{{ f.group }}</span></td>
+            <td>{{ f.name }}</td>
+            <td>{% if f.website %}<a href="{{ f.website }}" target="_blank" style="color:var(--accent); text-decoration:underline;">Link</a>{% else %}&mdash;{% endif %}</td>
+            <td class="mono">{{ "{:,}".format(f.record_count) }}</td>
+            <td>
+              <button class="pill" style="cursor:pointer; border:none;" onclick='openScopePanel("{{ f.id }}", "{{ f.name }}", {{ f.scope|tojson }})'>{{ f.scope_display }} &#9998;</button>
+            </td>
+            <td>
+              <form class="inline" method="post" action="/dns/feed/toggle">
+                <input type="hidden" name="feed_id" value="{{ f.id }}">
+                <input type="hidden" name="action" value="{{ 'disable' if f.enabled else 'enable' }}">
+                <button type="submit" class="toggle-btn {{ 'on' if f.enabled else '' }}"></button>
+              </form>
+            </td>
+            <td>
+              <div style="display:flex; gap:6px; justify-content:flex-end;">
+                <button class="icon-btn" title="Edit"
+                  onclick='openEditPanel({{ {"id": f.id, "name": f.name, "group": f.group, "feed_url": f.feed_url, "format": f.format, "website": f.website}|tojson }})'>
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 3.5 16 7l-9 9H3.5v-3.5Z"/></svg>
+                </button>
+                <form class="inline" method="post" action="/dns/feed/delete" onsubmit="return confirm('Delete feed {{ f.name }}?');">
+                  <input type="hidden" name="feed_id" value="{{ f.id }}">
+                  <button type="submit" class="icon-btn" title="Delete"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4h4v2M6 6l.7 9h6.6L14 6"/></svg></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="7">No custom DNSBL feeds defined yet. Add one below (e.g. Spamhaus, Feodo Tracker, etc).</td></tr>
+          {% endfor %}
+        </table>
+
+        <div class="add-panel" id="addPanel">
+          <div class="add-panel-title" id="addPanelTitle">Add DNSBL Feed</div>
+          <form method="post" action="/dns/feed/add" id="feedForm">
+            <div class="add-form-grid">
+              <div class="field"><label>Name</label><input type="text" name="name" id="f_name" required placeholder="e.g. Spamhaus DBL"></div>
+              <div class="field"><label>Group</label><input type="text" name="group" id="f_group" required placeholder="e.g. Threat Intel"></div>
+              <div class="field"><label>Format</label>
+                <select name="format" id="f_format">
+                  <option value="domains">Plain domain list</option>
+                  <option value="hosts">Hosts file (0.0.0.0 domain)</option>
+                  <option value="rpz">RPZ zone format</option>
+                </select>
+              </div>
+              <div class="field" style="grid-column:1 / -1;"><label>Feed URL</label><input type="text" name="feed_url" id="f_feed_url" required placeholder="https://example.com/blocklist.txt"></div>
+              <div class="field" style="grid-column:1 / -1;"><label>Website (optional, for reference)</label><input type="text" name="website" id="f_website" placeholder="https://example.com"></div>
+            </div>
+            <div class="add-form-actions">
+              <button type="submit" class="btn primary" id="f_submit">Add &amp; Download</button>
+              <button type="button" class="btn" onclick="closeAddPanel()">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="add-panel" id="scopePanel">
+          <div class="add-panel-title" id="scopePanelTitle">Feed Scope</div>
+          <p style="font-size:11.5px; color:var(--ash); margin-bottom:12px;">Choose whether this feed blocks on <b>all networks always</b> (default, recommended for security-critical feeds) or only on <b>selected networks</b> (useful for feeds that might be too aggressive for guest/mobile devices).</p>
+          <form method="post" action="/dns/feed/set_scope" id="scopeForm">
+            <input type="hidden" name="feed_id" id="scope_feed_id" value="">
+            <div style="display:flex; flex-direction:column; gap:2px; margin-bottom:14px;">
+              <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; padding:7px 0; width:fit-content;">
+                <input type="radio" name="scope_type" value="all" id="scope_type_all" onchange="toggleScopeTargets()" style="margin:0; width:15px; height:15px; flex-shrink:0;">
+                <span>All networks (always)</span>
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; padding:7px 0; width:fit-content;">
+                <input type="radio" name="scope_type" value="selected" id="scope_type_selected" onchange="toggleScopeTargets()" style="margin:0; width:15px; height:15px; flex-shrink:0;">
+                <span>Selected networks only</span>
+              </label>
+            </div>
+            <div id="scopeTargetsBox" style="display:none; flex-direction:column; gap:2px; border:1px solid var(--line-strong); border-radius:7px; padding:6px 14px; margin-bottom:14px; background:var(--canvas);">
+              {% for l in lan_ifaces %}
+              <label style="display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:400; color:var(--text); cursor:pointer; padding:6px 0; width:fit-content;">
+                <input type="checkbox" name="targets" value="{{ l.cidr }}" class="scope-target-cb" style="margin:0; width:14px; height:14px; flex-shrink:0;">
+                <span>{{ l.name }} &mdash; {{ l.role }} <span class="mono" style="color:var(--ash-dark);">({{ l.cidr }})</span></span>
+              </label>
+              {% endfor %}
+            </div>
+            <div class="add-form-actions">
+              <button type="submit" class="btn primary">Save Scope</button>
+              <button type="button" class="btn" onclick="document.getElementById('scopePanel').classList.remove('open')">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+
+      {% if update_log %}
+      <div class="page-toolbar"><span class="count">Last Update Log</span></div>
+      <div class="widget">
+        <div class="code-block">{{ update_log }}</div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function openAddPanel() {
+    document.getElementById('addPanelTitle').textContent = 'Add DNSBL Feed';
+    document.getElementById('f_submit').textContent = 'Add & Download';
+    document.getElementById('feedForm').action = '/dns/feed/add';
+    document.getElementById('feedForm').reset();
+    var existingIdField = document.getElementById('f_feed_id');
+    if (existingIdField) existingIdField.remove();
+    document.getElementById('addPanel').classList.add('open');
+  }
+  function closeAddPanel() { document.getElementById('addPanel').classList.remove('open'); }
+  function toggleScopeTargets() {
+    const isAll = document.getElementById('scope_type_all').checked;
+    document.getElementById('scopeTargetsBox').style.display = isAll ? 'none' : 'flex';
+  }
+  function openScopePanel(feedId, feedName, currentScope) {
+    document.getElementById('scopePanelTitle').textContent = 'Feed Scope: ' + feedName;
+    document.getElementById('scope_feed_id').value = feedId;
+    document.querySelectorAll('.scope-target-cb').forEach(cb => cb.checked = false);
+    if (currentScope === 'all') {
+      document.getElementById('scope_type_all').checked = true;
+    } else {
+      document.getElementById('scope_type_selected').checked = true;
+      currentScope.split(',').forEach(cidr => {
+        const cb = document.querySelector(`.scope-target-cb[value="${cidr.trim()}"]`);
+        if (cb) cb.checked = true;
+      });
+    }
+    toggleScopeTargets();
+    document.getElementById('scopePanel').classList.add('open');
+    document.getElementById('scopePanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+  function openEditPanel(feed) {
+    document.getElementById('addPanelTitle').textContent = 'Edit Feed: ' + feed.name;
+    document.getElementById('f_submit').textContent = 'Save Changes';
+    document.getElementById('feedForm').action = '/dns/feed/edit';
+    document.getElementById('f_name').value = feed.name;
+    document.getElementById('f_group').value = feed.group;
+    document.getElementById('f_format').value = feed.format;
+    document.getElementById('f_feed_url').value = feed.feed_url;
+    document.getElementById('f_website').value = feed.website;
+
+    var existingIdField = document.getElementById('f_feed_id');
+    if (existingIdField) existingIdField.remove();
+    var idInput = document.createElement('input');
+    idInput.type = 'hidden'; idInput.name = 'feed_id'; idInput.id = 'f_feed_id'; idInput.value = feed.id;
+    document.getElementById('feedForm').appendChild(idInput);
+
+    document.getElementById('addPanel').classList.add('open');
+    document.getElementById('addPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+</script>
+</body>
+</html>

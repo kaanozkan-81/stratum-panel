@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Resetting - Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E; --blue-line:#2E5D91;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12); --accent-2:#0EA5A0;
+    --amber:#F0A94E; --amber-dim:rgba(240,169,78,.15); --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line:#D7DEE8; --line-strong:#C4CEDC;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--canvas); font-family:var(--font-body); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center;}
+  .card{background:var(--paper); border:1px solid var(--line-strong); border-radius:14px; padding:36px; width:460px; box-shadow:0 4px 20px rgba(16,21,33,.06); text-align:center;}
+  .icon-wrap{width:56px; height:56px; border-radius:50%; background:var(--danger-dim); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;}
+  .icon-wrap svg{animation:spin 1.6s linear infinite;}
+  @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+  h1{font-family:var(--font-display); font-size:18px; font-weight:600; margin-bottom:8px;}
+  .subtitle{font-size:12.5px; color:var(--ash); margin-bottom:24px; line-height:1.5;}
+  .countdown{font-family:var(--font-mono); font-size:38px; font-weight:700; color:var(--blue-800); margin-bottom:18px; letter-spacing:1px;}
+  .bar-track{width:100%; height:10px; border-radius:6px; background:var(--canvas); overflow:hidden; margin-bottom:16px;}
+  .bar-fill{height:100%; width:0%; border-radius:6px; background:linear-gradient(90deg, var(--amber), var(--danger)); transition:width 1s linear;}
+  .status-line{font-size:11.5px; color:var(--ash); margin-top:6px;}
+  .success{color:var(--accent-2); font-weight:600;}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap" id="icon-wrap">
+      <svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round"><path d="M10 2v6l4-2M10 2v6l-4-2"/><path d="M4 10a6 6 0 1 0 12 0"/><path d="M16 6v4h-4"/></svg>
+    </div>
+    <h1 id="title">Resetting to Factory Defaults</h1>
+    <div class="subtitle" id="subtitle">The gateway is erasing its configuration and rebooting. Please don't close this page — you'll be returned to the login screen automatically.</div>
+    <div class="countdown" id="countdown">2:30</div>
+    <div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+    <div class="status-line" id="status-line">Waiting for the gateway to come back online&hellip;</div>
+  </div>
+
+<script>
+  const TOTAL_SECONDS = 150; // first-boot yeniden calisip yeni sirlar/CA uretecegi icin normal reboot'tan UZUN
+  let remaining = TOTAL_SECONDS;
+  let done = false;
+
+  const countdownEl = document.getElementById('countdown');
+  const bar = document.getElementById('bar');
+  const title = document.getElementById('title');
+  const subtitle = document.getElementById('subtitle');
+  const statusLine = document.getElementById('status-line');
+  const iconWrap = document.getElementById('icon-wrap');
+
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m + ':' + String(sec).padStart(2, '0');
+  }
+
+  const tickInterval = setInterval(() => {
+    if (done) return;
+    remaining -= 1;
+    if (remaining <= 0) {
+      remaining = 0;
+      statusLine.textContent = 'Still waiting — this can take a bit longer than usual…';
+    }
+    countdownEl.textContent = formatTime(remaining);
+    bar.style.width = (100 * (TOTAL_SECONDS - remaining) / TOTAL_SECONDS) + '%';
+  }, 1000);
+
+  function showSuccess() {
+    done = true;
+    clearInterval(tickInterval);
+    clearInterval(healthInterval);
+    countdownEl.textContent = '0:00';
+    bar.style.width = '100%';
+    bar.style.background = 'var(--accent-2)';
+    statusLine.textContent = '';
+    iconWrap.querySelector('svg').style.animation = 'none';
+    iconWrap.style.background = 'var(--accent-dim)';
+    iconWrap.querySelector('svg').setAttribute('stroke', 'var(--accent-2)');
+    title.textContent = 'Gateway Is Back Online';
+    title.classList.add('success');
+    subtitle.textContent = 'Redirecting you to the login screen…';
+    setTimeout(() => { window.location.href = '/login'; }, 1500);
+  }
+
+  function checkHealth() {
+    if (done) return;
+    fetch('/api/health', { cache: 'no-store', signal: AbortSignal.timeout(2500) })
+      .then(res => { if (res.ok) showSuccess(); })
+      .catch(() => {});
+  }
+
+  // ONEMLI: ilk birkac saniye BEKLENIYOR - sistem HENUZ kapanma
+  // asamasinda olabilir, cok erken bir health check YANLISLIKLA
+  // "basarili" donebilir (eski panel surecinden).
+  let healthInterval;
+  setTimeout(() => {
+    checkHealth();
+    healthInterval = setInterval(checkHealth, 4000);
+  }, 20000);
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E; --blue-line:#2E5D91;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12); --accent-2:#0EA5A0;
+    --amber:#F0A94E; --amber-dim:rgba(240,169,78,.15); --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line:#D7DEE8; --line-strong:#C4CEDC; --widget-head:#F4F8FD;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521; --text-dark:#E8EEF7;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; -webkit-font-smoothing:antialiased;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  .shell{display:flex; min-height:100vh;}
+  .sidebar{width:250px; flex-shrink:0; background:var(--blue-900); color:var(--text-dark); display:flex; flex-direction:column;}
+  .brand{display:flex; align-items:center; gap:10px; padding:20px 18px 16px;}
+  .brand-mark{width:32px; height:32px; flex-shrink:0;}
+  .brand-mark svg{width:100%; height:100%;}
+  .brand-name{font-family:var(--font-display); font-weight:600; font-size:15.5px; color:#fff;}
+  .brand-sub{font-size:10.5px; color:#8FA9CB; letter-spacing:.04em; margin-top:1px;}
+  .nav-scroll{flex:1; overflow-y:auto; padding:6px 10px 18px;}
+  .nav-group{margin-top:18px;}
+  .nav-group:first-child{margin-top:4px;}
+  .nav-group-label{font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:#6B87AC; padding:0 10px 7px;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:8px 10px; margin:1px 0; border-radius:7px; color:#B9CBE4; font-size:13px; font-weight:500;}
+  .nav-item svg{width:17px; height:17px; flex-shrink:0; opacity:.85;}
+  .nav-item:hover{background:var(--blue-800); color:#fff;}
+  .nav-item.active{background:var(--accent); color:#fff;}
+  .nav-item.active svg{opacity:1;}
+  .sidebar-foot{padding:14px 18px; border-top:1px solid var(--blue-line); display:flex; align-items:center; gap:9px;}
+  .sidebar-foot .avatar{width:26px; height:26px; border-radius:7px; background:var(--blue-800); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:11px; font-weight:600; color:#fff; border:1px solid var(--blue-line);}
+  .sidebar-foot .who{font-size:11.5px; color:#8FA9CB; line-height:1.3;}
+  .sidebar-foot .who b{color:#fff; font-weight:600; display:block; font-size:12px;}
+  .sidebar-foot .logout{margin-left:auto; color:#8FA9CB; font-size:11px;}
+  .sidebar-foot .logout:hover{color:#fff;}
+  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{height:58px; flex-shrink:0; background:var(--blue-900); display:flex; align-items:center; justify-content:space-between; padding:0 24px;}
+  .crumb b{font-family:var(--font-display); font-weight:600; color:#fff; font-size:15px;}
+  .crumb span{color:#8FA9CB; margin:0 6px;}
+  .content{flex:1; padding:24px 26px 60px; overflow-y:auto; max-width:1200px;}
+
+  .section-title{font-family:var(--font-display); font-weight:600; font-size:13px; color:var(--ash); text-transform:uppercase; letter-spacing:.04em; margin:22px 0 10px;}
+  .section-title:first-child{margin-top:0;}
+  .wan-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;}
+  .wan-card{background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; box-shadow:0 1px 2px rgba(16,21,33,.03);}
+  .wan-name{font-family:var(--font-mono); font-weight:600; font-size:14px; margin-bottom:8px;}
+  .wan-info{font-size:12.5px; color:var(--ash); margin-bottom:4px;}
+  .status{display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;}
+  .status.up{background:rgba(14,165,160,.15); color:#0A7B6A;}
+  .status.down{background:rgba(229,72,77,.15); color:#B3232A;}
+  .status.disabled{background:rgba(151,160,175,.2); color:#5B6472;}
+  .form-row{display:flex; align-items:center; gap:10px; margin-top:10px;}
+  .form-row select, .form-row input[type="checkbox"]{margin-left:0;}
+  .btn{padding:8px 16px; border:none; border-radius:7px; background:var(--blue-800); color:#fff; font-weight:600; font-size:12px; cursor:pointer;}
+  .btn:hover{background:var(--accent);}
+  .log-box{background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-top:20px; font-family:var(--font-mono); font-size:11px; white-space:pre-wrap; max-height:200px; overflow-y:auto;}
+  .info-banner{display:flex; gap:10px; align-items:flex-start; background:var(--accent-dim); border:1px solid rgba(62,142,237,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#1D5AA3;}
+  .info-banner svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="4" rx="1.5" fill="#3E8EED"/><rect x="4" y="14" width="24" height="4" rx="1.5" fill="#6FB3F5" opacity=".9"/><rect x="4" y="20" width="24" height="4" rx="1.5" fill="#9DCBFA" opacity=".8"/></svg></div>
+      <div><div class="brand-name">Stratum</div><div class="brand-sub">GATEWAY &middot; v0.1</div></div>
+    </div>
+    <nav class="nav-scroll">
+      <div class="nav-group"><a class="nav-item" href="/"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="3" y="10.5" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.3"/></svg>Overview</a></div>
+      <div class="nav-group"><div class="nav-group-label">Network</div>
+        <a class="nav-item" href="/interfaces"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="1.8"/><circle cx="4" cy="16" r="1.8"/><circle cx="16" cy="16" r="1.8"/><path d="M10 5.8V10M10 10L4 14.3M10 10l6 4.3"/></svg>Interfaces &amp; VLANs</a>
+        <a class="nav-item" href="/multi-wan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-5 5-8 8-8s6.5 3 8 8"/><path d="M2 12l3-1.2M18 12l-3-1.2"/><circle cx="10" cy="15.5" r="1.6"/></svg>Multi-WAN &amp; Failover</a>
+        <a class="nav-item" href="/vpn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="9" rx="1.5"/><path d="M6 8V6a4 4 0 0 1 8 0v2"/></svg>VPN</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Firewall</div>
+        <a class="nav-item" href="/rules"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12M4 8h12M4 12h8"/></svg>Rules</a>
+        <a class="nav-item" href="/blocklist"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 17 6v5c0 4-3 6.5-7 8-4-1.5-7-4-7-8V6Z"/><path d="M7 10l2 2 4-4"/></svg>IP Block List</a>
+        <a class="nav-item" href="/nat"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11M13 6l-2.5-2.5M13 6l-2.5 2.5"/><path d="M18 14H7M7 14l2.5-2.5M7 14l2.5 2.5"/></svg>NAT / Port Forwarding</a>
+        <a class="nav-item" href="/nat/1to1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="6" height="8" rx="1.2"/><rect x="11.5" y="6" width="6" height="8" rx="1.2"/></svg>1:1 NAT</a>
+        <a class="nav-item" href="/objects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 10 3l6 0 0 6-7.2 7.2a1.4 1.4 0 0 1-2 0L3 12.2a1.4 1.4 0 0 1 0-2Z"/></svg>Objects</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Services</div>
+        <a class="nav-item" href="/dhcp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="5" rx="1.3"/><rect x="3" y="12" width="14" height="5" rx="1.3"/></svg>DHCP Server</a>
+        <a class="nav-item" href="/dns"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2 2.2 12 0 14M10 3c-2 2-2.2 12 0 14"/></svg>DNS Resolver</a>
+        <a class="nav-item active" href="/qos"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a7 7 0 0 1 14 0"/><path d="M10 15V8M10 8l3 2"/></svg>Traffic Shaping</a>
+        <a class="nav-item" href="/snmp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h3l2-5 3 9 2-7 2 3h4"/></svg>SNMP</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V9M9 16V4M14 16v-6M18 16H2"/></svg>NetFlow</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Threat Protection</div>
+        <a class="nav-item" href="/ids"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c2-3.3 5-5 8-5s6 1.7 8 5c-2 3.3-5 5-8 5s-6-1.7-8-5Z"/></svg>Intrusion Detection</a>
+        <a class="nav-item" href="/crowdsec"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.3"/><circle cx="14" cy="8" r="1.8"/></svg>CrowdSec</a>
+        <a class="nav-item" href="/geoblock"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.5S4 12.8 4 8a6 6 0 0 1 12 0c0 4.8-6 9.5-6 9.5Z"/></svg>Country Blocking</a>
+        <a class="nav-item" href="/webfilter"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14l-5.5 7v4.5L8.5 17V11Z"/></svg>Web Filter</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">System</div>
+        <a class="nav-item" href="/services"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="4" rx="1.2"/><rect x="3" y="10" width="14" height="4" rx="1.2"/><circle cx="6" cy="6" r=".6" fill="currentColor"/><circle cx="6" cy="12" r=".6" fill="currentColor"/></svg>Services</a>
+        <a class="nav-item" href="/logs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M4 10h12M4 15h6"/></svg>Logs</a>
+        <a class="nav-item" href="/settings"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"/><path d="M10 3v2M10 15v2M17 10h-2M5 10H3"/></svg>General Settings</a>
+        <a class="nav-item" href="/backup"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v9M6 8l4 4 4-4M4 15h12"/></svg>Backup</a>
+        <a class="nav-item" href="/update"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v6l4-2M10 2v6l-4-2"/><path d="M4 10a6 6 0 1 0 12 0"/><path d="M16 6v4h-4"/></svg>Software Update</a>
+        <a class="nav-item" href="/terminal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="16" height="12" rx="1.5"/><path d="M5.5 8l2.5 2.5-2.5 2.5M10 13h4"/></svg>Terminal</a>
+        <a class="nav-item" href="/captive-portal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 3a10 10 0 0 1 0 14M10 3a10 10 0 0 0 0 14M3 10h14"/></svg>Captive Portal</a>
+        <a class="nav-item" href="/users"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Users</a>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="avatar">{{ username[:2]|upper }}</div>
+      <div class="who"><b>{{ username }}@stratum</b>Administrator session</div>
+      <a class="logout" href="/logout">Log out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar"><div class="crumb"><b>Services</b><span>/</span><b>Traffic Shaping</b></div></div>
+    <div class="content">
+      {% if saved %}<div style="background:var(--accent-dim); border:1px solid var(--accent); border-radius:8px; padding:10px 14px; margin-bottom:16px; color:var(--accent);">Settings applied.</div>{% endif %}
+      {% if error %}<div style="background:var(--danger-dim); border:1px solid var(--danger); border-radius:8px; padding:10px 14px; margin-bottom:16px; color:#B3232A;">{{ error }}</div>{% endif %}
+
+      <div class="info-banner">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><path d="M10 8.5v5M10 6.3v.1"/></svg>
+        <span>Set each WAN's real bandwidth (Mbit), then give each network a guaranteed and ceiling bandwidth in Mbit directly &mdash; e.g. "LAN: 100 guaranteed, 450 ceiling" caps LAN at 100 Mbit minimum, up to 450 Mbit if spare capacity is available.</span>
+      </div>
+
+      <div class="section-title">Shaping Status</div>
+      <div class="wan-grid" style="margin-bottom:20px;">
+        {% for w in status.wans %}
+        <div class="wan-card"><div class="wan-name"><span class="status {{ 'up' if w.shaped else 'down' }}">{{ 'Active' if w.shaped else 'Inactive' }}</span></div><div class="wan-info">{{ w.name }}</div></div>
+        {% endfor %}
+      </div>
+
+      <form method="post" action="/qos/apply" onsubmit="return confirm('Apply traffic shaping? This briefly resets queueing on your WAN interfaces.');">
+        <div class="section-title">WAN Bandwidth</div>
+        <div style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-bottom:24px; display:flex; flex-wrap:wrap; gap:24px;">
+          {% for w in wan_candidates %}
+          <div>
+            <div style="font-weight:600; font-family:var(--font-mono); margin-bottom:8px;">{{ w.name }}</div>
+            <div style="display:flex; gap:10px;">
+              <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:4px; text-transform:uppercase;">Upload (Mbit)</label><input type="number" step="0.1" name="up_{{ w.name }}" value="{{ (wan_bw.get(w.name, {}).get('up_kbit', 0)|int / 1000) if wan_bw.get(w.name) else '' }}" required style="width:110px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:7px; font-size:12.5px;"></div>
+              <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:4px; text-transform:uppercase;">Download (Mbit)</label><input type="number" step="0.1" name="down_{{ w.name }}" value="{{ (wan_bw.get(w.name, {}).get('down_kbit', 0)|int / 1000) if wan_bw.get(w.name) else '' }}" required style="width:110px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:7px; font-size:12.5px;"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="section-title">Network Bandwidth</div>
+        <div style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; overflow:hidden; margin-bottom:20px;">
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+            <tr style="background:var(--widget-head);">
+              <th style="text-align:left; padding:10px 16px; font-size:10.5px; text-transform:uppercase; color:var(--ash);">Network</th>
+              <th style="text-align:left; padding:10px 16px; font-size:10.5px; text-transform:uppercase; color:var(--ash);">Subnet</th>
+              <th style="text-align:left; padding:10px 16px; font-size:10.5px; text-transform:uppercase; color:var(--ash);">Upload (Mbit)</th>
+              <th style="text-align:left; padding:10px 16px; font-size:10.5px; text-transform:uppercase; color:var(--ash);">Download (Mbit)</th>
+            </tr>
+            {% for n in networks %}
+            <tr style="border-top:1px solid var(--line);">
+              <td style="padding:10px 16px; font-weight:600;">{{ n.name }} <span style="color:var(--ash); font-size:11px; font-weight:400;">({{ n.role }})</span></td>
+              <td style="padding:10px 16px; font-family:var(--font-mono); color:var(--ash);">{{ n.cidr }}</td>
+              <td style="padding:10px 16px;"><input type="number" step="0.1" name="up_{{ n.name }}" value="{{ n.up_mbit }}" min="0.1" required style="width:90px; padding:6px 8px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></td>
+              <td style="padding:10px 16px;"><input type="number" step="0.1" name="down_{{ n.name }}" value="{{ n.down_mbit }}" min="0.1" required style="width:90px; padding:6px 8px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" style="padding:20px 16px; text-align:center; color:var(--ash);">No LAN/OPT networks found.</td></tr>
+            {% endfor %}
+          </table>
+        </div>
+
+        <button type="submit" class="btn">Apply Traffic Shaping</button>
+      </form>
+
+      <form method="post" action="/qos/disable" onsubmit="return confirm('Disable traffic shaping? WAN interfaces will return to unshaped default queueing.');" style="margin-top:10px;">
+        <button type="submit" style="padding:9px 18px; border:1px solid var(--line-strong); border-radius:8px; background:var(--paper); color:var(--danger); font-weight:600; font-size:12.5px; cursor:pointer;">Disable Shaping</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

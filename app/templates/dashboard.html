@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E; --blue-700:#24507F; --blue-line:#2E5D91; --blue-100:#EAF2FC;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12); --accent-2:#0EA5A0;
+    --amber:#F0A94E; --amber-dim:rgba(240,169,78,.15); --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line:#D7DEE8; --line-strong:#C4CEDC; --widget-head:#F4F8FD;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521; --text-dark:#E8EEF7;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; -webkit-font-smoothing:antialiased;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  .shell{display:flex; min-height:100vh;}
+  .sidebar{width:250px; flex-shrink:0; background:var(--blue-900); color:var(--text-dark); display:flex; flex-direction:column;}
+  .brand{display:flex; align-items:center; gap:10px; padding:20px 18px 16px;}
+  .brand-mark{width:32px; height:32px; flex-shrink:0;}
+  .brand-mark svg{width:100%; height:100%;}
+  .brand-name{font-family:var(--font-display); font-weight:600; font-size:15.5px; color:#fff;}
+  .brand-sub{font-size:10.5px; color:#8FA9CB; letter-spacing:.04em; margin-top:1px;}
+  .nav-scroll{flex:1; overflow-y:auto; padding:6px 10px 18px;}
+  .nav-group{margin-top:18px;}
+  .nav-group:first-child{margin-top:4px;}
+  .nav-group-label{font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:#6B87AC; padding:0 10px 7px;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:8px 10px; margin:1px 0; border-radius:7px; color:#B9CBE4; font-size:13px; font-weight:500;}
+  .nav-item svg{width:17px; height:17px; flex-shrink:0; opacity:.85;}
+  .nav-item:hover{background:var(--blue-800); color:#fff;}
+  .nav-item.active{background:var(--accent); color:#fff;}
+  .nav-item.active svg{opacity:1;}
+  .sidebar-foot{padding:14px 18px; border-top:1px solid var(--blue-line); display:flex; align-items:center; gap:9px;}
+  .sidebar-foot .avatar{width:26px; height:26px; border-radius:7px; background:var(--blue-800); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:11px; font-weight:600; color:#fff; border:1px solid var(--blue-line);}
+  .sidebar-foot .who{font-size:11.5px; color:#8FA9CB; line-height:1.3;}
+  .sidebar-foot .who b{color:#fff; font-weight:600; display:block; font-size:12px;}
+  .sidebar-foot .logout{margin-left:auto; color:#8FA9CB; font-size:11px;}
+  .sidebar-foot .logout:hover{color:#fff;}
+  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{height:58px; flex-shrink:0; background:var(--blue-900); display:flex; align-items:center; justify-content:space-between; padding:0 24px;}
+  .crumb b{font-family:var(--font-display); font-weight:600; color:#fff; font-size:15px;}
+  .content{flex:1; padding:24px 26px 60px; overflow-y:auto; max-width:1400px;}
+
+  /* ===== SYSTEM VITALS HERO (top strip) ===== */
+  .vitals{display:flex; background:var(--blue-900); border-radius:12px; color:#fff; overflow:hidden; margin-bottom:20px; border:1px solid var(--blue-line);}
+  .vital-cell{flex:1; padding:18px 22px; border-right:1px solid var(--blue-line); display:flex; flex-direction:column; gap:8px;}
+  .vital-cell:last-child{border-right:none;}
+  .vital-top{display:flex; align-items:center; gap:7px; font-size:10.5px; color:#8FA9CB; text-transform:uppercase; letter-spacing:.04em;}
+  .vital-top svg{width:13px; height:13px;}
+  .vital-val{font-family:var(--font-display); font-size:22px; font-weight:600;}
+  .vital-val .unit{font-family:var(--font-body); font-size:11px; font-weight:400; color:#8FA9CB; margin-left:2px;}
+  .vital-bar{height:5px; border-radius:20px; background:var(--blue-800); overflow:hidden; margin-top:2px;}
+  .vital-fill{height:100%; border-radius:20px; background:#6FE3C7; transition:width .4s ease;}
+  .vital-fill.warn{background:var(--amber);}
+  .vital-fill.crit{background:var(--danger);}
+
+  /* ===== WIDGET GRID ===== */
+  .row{display:grid; gap:16px; margin-bottom:16px; align-items:start;}
+  .row-3{grid-template-columns:repeat(3, 1fr);}
+  .row-2{grid-template-columns:1.3fr 1fr;}
+  .widget-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin-bottom:16px; align-items:start;}
+  .widget-grid .widget{height:100%;}
+  .widget-grid .widget{cursor:pointer; transition:box-shadow .15s, transform .15s;}
+  .widget-grid .widget:hover{box-shadow:0 4px 14px rgba(16,21,33,.09); transform:translateY(-1px);}
+  .mini-stat-row{display:flex; gap:20px; padding:16px 18px; flex-wrap:wrap;}
+  .mini-stat{display:flex; flex-direction:column; gap:2px;}
+  .mini-stat b{font-family:var(--font-mono); font-size:16px; font-weight:600;}
+  .mini-stat span{font-size:10.5px; color:var(--ash); text-transform:uppercase; letter-spacing:.02em;}
+  .customize-btn{padding:7px 14px; border:1.5px solid var(--line-strong); border-radius:8px; background:var(--paper); font-size:11.5px; font-weight:600; cursor:pointer; color:var(--text); display:flex; align-items:center; gap:6px;}
+  .customize-modal-backdrop{display:none; position:fixed; inset:0; background:rgba(15,20,35,.5); z-index:100; align-items:center; justify-content:center;}
+  .customize-modal-backdrop.open{display:flex;}
+  .customize-modal{background:var(--paper); border-radius:12px; padding:22px; width:380px; max-height:80vh; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,.25);}
+  .customize-modal h3{font-family:var(--font-display); font-size:15px; margin-bottom:14px;}
+  .customize-item{display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+  .customize-item:last-child{border-bottom:none;}
+  .customize-modal-actions{display:flex; gap:10px; margin-top:16px;}
+  .fan-wrap{display:flex; align-items:center; gap:14px; padding-top:4px; border-top:1px solid var(--line);}
+  .fan-icon{flex-shrink:0;}
+  .fan-icon svg{animation: fan-spin 3s linear infinite;}
+  @keyframes fan-spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .fan-status-label{font-size:11px; color:var(--ash); text-transform:uppercase; letter-spacing:.02em; margin-bottom:2px;}
+  .fan-status-val{font-family:var(--font-display); font-weight:600; font-size:13px;}
+
+  .widget{background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; overflow:hidden; box-shadow:0 1px 2px rgba(16,21,33,.03); display:flex; flex-direction:column;}
+  .row .widget{height:100%;}
+  .widget-head{display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--widget-head); border-bottom:1px solid var(--line); flex-shrink:0;}
+  .widget-title{font-family:var(--font-display); font-weight:600; font-size:12.5px;}
+  .widget-title-sub{font-size:10.5px; color:var(--ash); font-weight:400; margin-left:6px;}
+  .badge-live{font-size:9px; font-weight:700; letter-spacing:.04em; background:var(--accent-2); color:#fff; padding:2px 7px; border-radius:20px; flex-shrink:0;}
+  .badge-demo{font-size:9px; font-weight:700; letter-spacing:.04em; background:var(--ash-dark); color:#fff; padding:2px 7px; border-radius:20px; flex-shrink:0;}
+  .widget-body{padding:4px 0; flex:1; overflow:auto;}
+
+  .iface-row{display:flex; align-items:center; gap:11px; padding:9px 14px; border-bottom:1px solid var(--canvas); flex-wrap:wrap;}
+  .iface-row:last-child{border-bottom:none;}
+  .iface-dot{width:7px; height:7px; border-radius:50%; background:var(--accent-2); flex-shrink:0; box-shadow:0 0 0 3px var(--accent-dim);}
+  .iface-dot.down{background:#C7CCD6; box-shadow:none;}
+  .iface-dot.warn{background:var(--amber); box-shadow:0 0 0 3px var(--amber-dim);}
+  .iface-dot.missing{background:var(--danger); box-shadow:0 0 0 3px var(--danger-dim);}
+  .iface-name{font-family:var(--font-mono); font-size:11.5px; font-weight:500; width:88px; flex-shrink:0;}
+  .iface-role{font-size:11px; color:var(--ash); width:170px; flex-shrink:0;}
+  .iface-ip{font-family:var(--font-mono); font-size:11px; color:var(--text); margin-left:auto; white-space:nowrap;}
+  .iface-meta{font-size:10px; color:var(--ash-dark); width:80px; text-align:right; flex-shrink:0;}
+
+  .svc-grid{display:grid; grid-template-columns:1fr 1fr; gap:0;}
+  .svc-cell{display:flex; align-items:center; gap:8px; padding:9px 14px; border-bottom:1px solid var(--canvas); border-right:1px solid var(--canvas); min-width:0;}
+  .svc-cell:nth-child(2n){border-right:none;}
+  .svc-dot{width:7px; height:7px; border-radius:50%; background:var(--accent-2); flex-shrink:0;}
+  .svc-dot.down{background:var(--danger);}
+  .svc-name{font-size:10.5px; font-weight:500; font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .dns-summary{padding:14px; display:flex; gap:10px;}
+  .dns-stat{flex:1; text-align:center; padding:10px 4px; background:var(--canvas); border-radius:8px;}
+  .dns-stat b{display:block; font-family:var(--font-display); font-size:15px; font-weight:600;}
+  .dns-stat span{font-size:9px; color:var(--ash); text-transform:uppercase; letter-spacing:.02em;}
+  .dns-upstream{padding:0 14px 12px; display:flex; gap:6px; flex-wrap:wrap;}
+  .up-pill{font-size:9.5px; font-family:var(--font-mono); padding:3px 8px; border-radius:20px; background:var(--accent-dim); color:var(--accent); display:flex; align-items:center; gap:5px; white-space:nowrap;}
+  .up-pill i{width:5px; height:5px; border-radius:50%; background:var(--accent-2); flex-shrink:0;}
+
+  .threat-summary{padding:14px; display:flex; gap:10px;}
+  .threat-stat{flex:1; text-align:center; padding:10px 4px; background:var(--canvas); border-radius:8px;}
+  .threat-stat b{display:block; font-family:var(--font-display); font-size:15px; font-weight:600;}
+  .threat-stat b.danger{color:var(--danger);}
+  .threat-stat span{font-size:9px; color:var(--ash); text-transform:uppercase; letter-spacing:.02em;}
+
+  .cat-list{padding:10px 14px 6px;}
+  .cat-row{display:flex; align-items:center; gap:9px; padding:6px 0;}
+  .cat-name{font-size:11.5px; width:70px; flex-shrink:0; text-transform:capitalize;}
+  .cat-bar-wrap{flex:1; height:6px; border-radius:20px; background:var(--canvas); overflow:hidden;}
+  .cat-bar{height:100%; border-radius:20px; background:var(--accent);}
+  .cat-count{font-family:var(--font-mono); font-size:10.5px; color:var(--ash); width:60px; text-align:right; flex-shrink:0;}
+  .cat-foot{padding:10px 14px; border-top:1px solid var(--canvas); font-size:10.5px; color:var(--ash); display:flex; justify-content:space-between; flex-shrink:0;}
+
+  .placeholder-note{padding:10px 14px; font-size:10.5px; color:var(--ash-dark); background:var(--canvas); text-align:center;}
+
+  .chart-head-row{display:flex; justify-content:space-between; align-items:baseline; padding:12px 14px 0;}
+  .chart-total{font-family:var(--font-mono); font-size:11px; color:var(--ash);}
+  .chart-total b{color:var(--text); font-weight:600;}
+  .chart-wrap{padding:6px 14px 10px;}
+
+  .temp-row-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .temp-label{font-size:11px; font-weight:600; color:var(--ash); text-transform:uppercase; letter-spacing:.03em;}
+  .temp-val{font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--text);}
+  .temp-bar-track{width:100%; height:8px; border-radius:4px; background:var(--canvas); overflow:hidden;}
+  .temp-bar-fill{height:100%; border-radius:4px; background:linear-gradient(90deg, #3E8EED, #3E8EED); transition:width .4s ease, background .4s ease;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="4" rx="1.5" fill="#3E8EED"/><rect x="4" y="14" width="24" height="4" rx="1.5" fill="#6FB3F5" opacity=".9"/><rect x="4" y="20" width="24" height="4" rx="1.5" fill="#9DCBFA" opacity=".8"/></svg></div>
+      <div><div class="brand-name">Stratum</div><div class="brand-sub">GATEWAY &middot; v0.1</div></div>
+    </div>
+    <nav class="nav-scroll">
+      <div class="nav-group"><a class="nav-item" href="/"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="3" y="10.5" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.3"/></svg>Overview</a></div>
+      <div class="nav-group"><div class="nav-group-label">Network</div>
+        <a class="nav-item" href="/interfaces"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="1.8"/><circle cx="4" cy="16" r="1.8"/><circle cx="16" cy="16" r="1.8"/><path d="M10 5.8V10M10 10L4 14.3M10 10l6 4.3"/></svg>Interfaces &amp; VLANs</a>
+        <a class="nav-item"         <a class="nav-item" href="/multi-wan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-5 5-8 8-8s6.5 3 8 8"/><path d="M2 12l3-1.2M18 12l-3-1.2"/><circle cx="10" cy="15.5" r="1.6"/></svg>Multi-WAN &amp; Failover</a>
+        <a class="nav-item" href="/vpn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="9" rx="1.5"/><path d="M6 8V6a4 4 0 0 1 8 0v2"/></svg>VPN</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Firewall</div>
+        <a class="nav-item" href="/rules"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12M4 8h12M4 12h8"/></svg>Rules</a>
+        <a class="nav-item" href="/blocklist"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 17 6v5c0 4-3 6.5-7 8-4-1.5-7-4-7-8V6Z"/><path d="M7 10l2 2 4-4"/></svg>IP Block List</a>
+        <a class="nav-item" href="/nat"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11M13 6l-2.5-2.5M13 6l-2.5 2.5"/><path d="M18 14H7M7 14l2.5-2.5M7 14l2.5 2.5"/></svg>NAT / Port Forwarding</a>
+        <a class="nav-item" href="/nat/1to1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="6" height="8" rx="1.2"/><rect x="11.5" y="6" width="6" height="8" rx="1.2"/></svg>1:1 NAT</a>
+        <a class="nav-item" href="/objects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 10 3l6 0 0 6-7.2 7.2a1.4 1.4 0 0 1-2 0L3 12.2a1.4 1.4 0 0 1 0-2Z"/></svg>Objects</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Services</div>
+        <a class="nav-item" href="/dhcp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="5" rx="1.3"/><rect x="3" y="12" width="14" height="5" rx="1.3"/></svg>DHCP Server</a>
+        <a class="nav-item" href="/dns"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2 2.2 12 0 14M10 3c-2 2-2.2 12 0 14"/></svg>DNS Resolver</a>
+        <a class="nav-item" href="/qos"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a7 7 0 0 1 14 0"/><path d="M10 15V8M10 8l3 2"/></svg>Traffic Shaping</a>
+        <a class="nav-item" href="/snmp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h3l2-5 3 9 2-7 2 3h4"/></svg>SNMP</a>
+        <a class="nav-item" href="/netflow"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V9M9 16V4M14 16v-6M18 16H2"/></svg>NetFlow</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Threat Protection</div>
+        <a class="nav-item" href="/ids"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c2-3.3 5-5 8-5s6 1.7 8 5c-2 3.3-5 5-8 5s-6-1.7-8-5Z"/></svg>Intrusion Detection</a>
+        <a class="nav-item" href="/crowdsec"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.3"/><circle cx="14" cy="8" r="1.8"/></svg>CrowdSec</a>
+        <a class="nav-item" href="/geoblock"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.5S4 12.8 4 8a6 6 0 0 1 12 0c0 4.8-6 9.5-6 9.5Z"/></svg>Country Blocking</a>
+        <a class="nav-item" href="/webfilter"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14l-5.5 7v4.5L8.5 17V11Z"/></svg>Web Filter</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">System</div>
+        <a class="nav-item" href="/services"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="4" rx="1.2"/><rect x="3" y="10" width="14" height="4" rx="1.2"/><circle cx="6" cy="6" r=".6" fill="currentColor"/><circle cx="6" cy="12" r=".6" fill="currentColor"/></svg>Services</a>
+        <a class="nav-item" href="/logs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M4 10h12M4 15h6"/></svg>Logs</a>
+        <a class="nav-item" href="/settings"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"/><path d="M10 3v2M10 15v2M17 10h-2M5 10H3"/></svg>General Settings</a>
+        <a class="nav-item" href="/backup"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v9M6 8l4 4 4-4M4 15h12"/></svg>Backup</a>
+        <a class="nav-item" href="/update"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v6l4-2M10 2v6l-4-2"/><path d="M4 10a6 6 0 1 0 12 0"/><path d="M16 6v4h-4"/></svg>Software Update</a>
+        <a class="nav-item" href="/terminal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="16" height="12" rx="1.5"/><path d="M5.5 8l2.5 2.5-2.5 2.5M10 13h4"/></svg>Terminal</a>
+        <a class="nav-item" href="/captive-portal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 3a10 10 0 0 1 0 14M10 3a10 10 0 0 0 0 14M3 10h14"/></svg>Captive Portal</a>
+        <a class="nav-item" href="/users"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Users</a>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="avatar">{{ username[:2]|upper }}</div>
+      <div class="who"><b>{{ username }}@stratum</b>Administrator session</div>
+      <a class="logout" href="/logout">Log out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar"><div class="crumb"><b>Overview</b></div><button class="customize-btn" onclick="openCustomize()"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.2"/><path d="M10 2v2.2M10 15.8V18M18 10h-2.2M4.2 10H2M15.4 4.6l-1.5 1.5M6.1 13.9l-1.5 1.5M15.4 15.4l-1.5-1.5M6.1 6.1l-1.5-1.5"/></svg>Customize</button></div>
+    <div class="content">
+
+      <!-- ===== SYSTEM VITALS ===== -->
+      <div class="vitals" id="vitals">
+        <div class="vital-cell">
+          <div class="vital-top"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="4" width="12" height="12" rx="2"/><path d="M8 2v2M12 2v2M8 16v2M12 16v2M2 8h2M2 12h2M16 8h2M16 12h2"/></svg>CPU</div>
+          <div class="vital-val" id="v-cpu">&mdash;</div>
+          <div class="vital-bar"><div class="vital-fill" id="v-cpu-bar" style="width:0%"></div></div>
+        </div>
+        <div class="vital-cell">
+          <div class="vital-top"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="14" height="8" rx="1.5"/><path d="M6 6V4.5A1.5 1.5 0 0 1 7.5 3h5A1.5 1.5 0 0 1 14 4.5V6"/></svg>Memory</div>
+          <div class="vital-val" id="v-ram">&mdash;</div>
+          <div class="vital-bar"><div class="vital-fill" id="v-ram-bar" style="width:0%"></div></div>
+        </div>
+        <div class="vital-cell">
+          <div class="vital-top"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="10" cy="5" rx="7" ry="2.5"/><path d="M17 5v10c0 1.4-3.1 2.5-7 2.5s-7-1.1-7-2.5V5"/><path d="M17 10c0 1.4-3.1 2.5-7 2.5s-7-1.1-7-2.5"/></svg>Disk</div>
+          <div class="vital-val" id="v-disk">&mdash;</div>
+          <div class="vital-bar"><div class="vital-fill" id="v-disk-bar" style="width:0%"></div></div>
+        </div>
+        <div class="vital-cell">
+          <div class="vital-top"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l2.5 2.5"/></svg>Uptime</div>
+          <div class="vital-val" id="v-uptime">&mdash;</div>
+        </div>
+      </div>
+
+      <!-- ===== WIDGET GRID (customizable) ===== -->
+      <div class="widget-grid" id="widget-grid">
+        {% if 'interfaces' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/interfaces'">
+          <div class="widget-head">
+            <div><span class="widget-title">Network Interfaces</span><span class="widget-title-sub" id="iface-count-sub">&mdash;</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="widget-body" id="iface-list">
+            <div class="placeholder-note">Loading...</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'temperature' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/services'">
+          <div class="widget-head">
+            <div><span class="widget-title">Temperature</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="widget-body" style="padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
+            <div class="temp-row">
+              <div class="temp-row-top">
+                <span class="temp-label">CPU</span>
+                <span class="temp-val" id="temp-cpu-val">&mdash;</span>
+              </div>
+              <div class="temp-bar-track"><div class="temp-bar-fill" id="temp-cpu-bar" style="width:0%;"></div></div>
+            </div>
+            <div class="temp-row">
+              <div class="temp-row-top">
+                <span class="temp-label">System</span>
+                <span class="temp-val" id="temp-sys-val">&mdash;</span>
+              </div>
+              <div class="temp-bar-track"><div class="temp-bar-fill" id="temp-sys-bar" style="width:0%;"></div></div>
+            </div>
+            <div class="fan-wrap">
+              <div class="fan-icon" id="fan-icon">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="2" fill="var(--accent)"/>
+                  <path d="M12 12C12 12 10 5 15 4C18 3.3 19.5 6 18 8.5C16.5 11 12 12 12 12Z" fill="var(--accent)" opacity="0.85"/>
+                  <path d="M12 12C12 12 19 10 20 15C20.7 18 18 19.5 15.5 18C13 16.5 12 12 12 12Z" fill="var(--accent)" opacity="0.7"/>
+                  <path d="M12 12C12 12 14 19 9 20C6 20.7 4.5 18 6 15.5C7.5 13 12 12 12 12Z" fill="var(--accent)" opacity="0.55"/>
+                  <path d="M12 12C12 12 5 14 4 9C3.3 6 6 4.5 8.5 6C11 7.5 12 12 12 12Z" fill="var(--accent)" opacity="0.4"/>
+                </svg>
+              </div>
+              <div>
+                <div class="fan-status-label">Cooling</div>
+                <div class="fan-status-val" id="fan-status-val">&mdash;</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'services' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/services'">
+          <div class="widget-head">
+            <div><span class="widget-title">Service Status</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="widget-body" id="service-list">
+            <div class="placeholder-note">Loading...</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'dns' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/dns'">
+          <div class="widget-head">
+            <div><span class="widget-title">DNS Resolver</span><span class="widget-title-sub">Unbound</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="dns-summary" id="dns-summary">
+            <div class="dns-stat"><b>&mdash;</b><span>Queries</span></div>
+            <div class="dns-stat"><b>&mdash;</b><span>Cache Hit</span></div>
+            <div class="dns-stat"><b>&mdash;</b><span>Avg Resp.</span></div>
+          </div>
+          <div class="dns-upstream">
+            <span class="up-pill"><i></i>Quad9 &middot; DoT</span>
+            <span class="up-pill"><i></i>Cloudflare &middot; DoT</span>
+            <span class="up-pill" id="dns-rpz-pill" style="background:var(--canvas);color:var(--ash);">&mdash;</span>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'threats' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/ids'">
+          <div class="widget-head">
+            <div><span class="widget-title">Threat Protection</span><span class="widget-title-sub">Suricata + CrowdSec</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="threat-summary" id="threat-summary">
+            <div class="threat-stat"><b>&mdash;</b><span>Active Bans</span></div>
+            <div class="threat-stat"><b>&mdash;</b><span>Alerts Today</span></div>
+            <div class="threat-stat"><b>&mdash;</b><span>IDS Rules</span></div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'webfilter' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/webfilter'">
+          <div class="widget-head">
+            <div><span class="widget-title">Web Filter</span><span class="widget-title-sub">Category-based, RPZ</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="cat-list" id="webfilter-cats">
+            <div class="placeholder-note">Loading...</div>
+          </div>
+          <div class="cat-foot" id="webfilter-foot"></div>
+        </div>
+        {% endif %}
+
+        {% if 'traffic' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/netflow'">
+          <div class="widget-head">
+            <div><span class="widget-title">Traffic Graph</span><span class="widget-title-sub">NetFlow, last 24h</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="chart-head-row">
+            <span style="font-size:10.5px;color:var(--ash);">Hourly volume</span>
+            <span class="chart-total" id="traffic-total">&mdash;</span>
+          </div>
+          <div class="chart-wrap">
+            <svg viewBox="0 0 700 140" width="100%" height="130" preserveAspectRatio="none" id="traffic-svg">
+            </svg>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'multiwan' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/multi-wan'">
+          <div class="widget-head">
+            <div><span class="widget-title">Multi-WAN Health</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="widget-body" id="multiwan-list">
+            <div class="placeholder-note">Loading...</div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'vpn' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/vpn'">
+          <div class="widget-head">
+            <div><span class="widget-title">WireGuard VPN</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="mini-stat-row" id="vpn-stats">
+            <div class="mini-stat"><b>&mdash;</b><span>Status</span></div>
+            <div class="mini-stat"><b>&mdash;</b><span>Clients</span></div>
+            <div class="mini-stat"><b>&mdash;</b><span>Connected</span></div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'geoblock' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/geoblock'">
+          <div class="widget-head">
+            <div><span class="widget-title">IP &amp; Country Blocking</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="mini-stat-row" id="geoblock-stats">
+            <div class="mini-stat"><b>&mdash;</b><span>Countries</span></div>
+            <div class="mini-stat"><b>&mdash;</b><span>Geo Ranges</span></div>
+            <div class="mini-stat"><b>&mdash;</b><span>Threat Ranges</span></div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'backup' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/backup'">
+          <div class="widget-head">
+            <div><span class="widget-title">Backup Status</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="mini-stat-row" id="backup-stats">
+            <div class="mini-stat"><b>&mdash;</b><span>Last Backup</span></div>
+            <div class="mini-stat"><b>&mdash;</b><span>Size</span></div>
+            <div class="mini-stat"><b>&mdash;</b><span>Total Backups</span></div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if 'qos' in enabled_widgets %}
+        <div class="widget" onclick="location.href='/qos'">
+          <div class="widget-head">
+            <div><span class="widget-title">Traffic Shaping</span></div>
+            <span class="badge-live">LIVE</span>
+          </div>
+          <div class="mini-stat-row" id="qos-stats">
+            <div class="mini-stat"><b>&mdash;</b><span>Status</span></div>
+            <div class="mini-stat"><b>&mdash;</b><span>Networks Shaped</span></div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const STATUS_ICONS = {
+    up: '<div class="iface-dot"></div>',
+    down: '<div class="iface-dot down"></div>',
+    warn: '<div class="iface-dot warn"></div>',
+    missing: '<div class="iface-dot missing"></div>',
+  };
+  const STATUS_LABELS = { up: 'active', down: 'disconnected', warn: 'no carrier', missing: 'missing' };
+
+  function fmtUptime(seconds) {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (d > 0) return `${d}d ${h}h`;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
+
+  function barClass(pct) {
+    if (pct >= 90) return 'crit';
+    if (pct >= 70) return 'warn';
+    return '';
+  }
+
+  function setHTML(id, html) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  async function loadStatus() {
+    try {
+      const res = await fetch('/api/status');
+      if (!res.ok) return;
+      const data = await res.json();
+
+      setHTML('iface-list', data.interfaces.map(i => `
+        <div class="iface-row">
+          ${STATUS_ICONS[i.status] || STATUS_ICONS.missing}
+          <div class="iface-name">${i.name}</div>
+          <div class="iface-role">${i.role}</div>
+          <div class="iface-ip">${i.ip || '&mdash;'}</div>
+          <div class="iface-meta">${STATUS_LABELS[i.status] || i.status}</div>
+        </div>
+      `).join(''));
+
+      const physCount = data.interfaces.filter(i => !i.name.startsWith('vlan')).length;
+      const vlanCount = data.interfaces.filter(i => i.name.startsWith('vlan')).length;
+      setText('iface-count-sub', `${physCount} physical` + (vlanCount ? ` \u00b7 ${vlanCount} VLAN${vlanCount === 1 ? '' : 's'}` : ''));
+
+      function tempColor(t) {
+        if (t === null || t === undefined) return '#97A0AF';
+        if (t < 55) return '#2FB380';
+        if (t < 75) return '#D99A2B';
+        return '#E5484D';
+      }
+      function tempPct(t) {
+        if (t === null || t === undefined) return 0;
+        return Math.max(4, Math.min(100, (t / 90) * 100));
+      }
+      const temp = data.temperature || {};
+      setText('temp-cpu-val', temp.cpu != null ? `${temp.cpu}\u00b0C` : '\u2014');
+      setText('temp-sys-val', temp.system != null ? `${temp.system}\u00b0C` : '\u2014');
+      const cpuBar = document.getElementById('temp-cpu-bar');
+      if (cpuBar) { cpuBar.style.width = tempPct(temp.cpu) + '%'; cpuBar.style.background = tempColor(temp.cpu); }
+      const sysBar = document.getElementById('temp-sys-bar');
+      if (sysBar) { sysBar.style.width = tempPct(temp.system) + '%'; sysBar.style.background = tempColor(temp.system); }
+
+      const fanIcon = document.getElementById('fan-icon');
+      const fanStatusVal = document.getElementById('fan-status-val');
+      if (fanIcon && fanStatusVal) {
+        const cpuTemp = temp.cpu;
+        let duration, label, color;
+        if (cpuTemp == null) {
+          duration = 3; label = 'Unknown'; color = 'var(--ash)';
+        } else if (cpuTemp < 55) {
+          duration = 3; label = 'Normal'; color = 'var(--accent-2)';
+        } else if (cpuTemp < 75) {
+          duration = 1.4; label = 'Elevated'; color = 'var(--amber)';
+        } else {
+          duration = 0.6; label = 'High'; color = 'var(--danger)';
+        }
+        const svg = fanIcon.querySelector('svg');
+        if (svg) svg.style.animationDuration = duration + 's';
+        fanStatusVal.textContent = label;
+        fanStatusVal.style.color = color;
+      }
+
+      setHTML('service-list', '<div class="svc-grid">' + data.services.map(s => `
+        <div class="svc-cell">
+          <span class="svc-dot ${s.active ? '' : 'down'}"></span>
+          <span class="svc-name">${s.name}</span>
+        </div>
+      `).join('') + '</div>');
+
+      if (data.dns) {
+        const d = data.dns;
+        setHTML('dns-summary', `
+          <div class="dns-stat"><b>${d.queries !== null ? d.queries.toLocaleString() : '&mdash;'}</b><span>Queries</span></div>
+          <div class="dns-stat"><b>${d.cache_hit_rate !== null ? d.cache_hit_rate + '%' : '&mdash;'}</b><span>Cache Hit</span></div>
+          <div class="dns-stat"><b>${d.avg_response_ms !== null ? d.avg_response_ms + 'ms' : '&mdash;'}</b><span>Avg Resp.</span></div>
+        `);
+        setText('dns-rpz-pill', `${d.rpz_domains.toLocaleString()} domains`);
+      }
+
+      if (data.threats) {
+        const t = data.threats;
+        setHTML('threat-summary', `
+          <div class="threat-stat"><b>${t.crowdsec_bans.toLocaleString()}</b><span>Active Bans</span></div>
+          <div class="threat-stat"><b class="danger">${t.suricata_alerts_today}</b><span>Alerts Today</span></div>
+          <div class="threat-stat"><b>${(t.suricata_rules / 1000).toFixed(1)}k</b><span>IDS Rules</span></div>
+        `);
+      }
+
+      if (data.webfilter) {
+        const w = data.webfilter;
+        const maxDomains = Math.max(...w.categories.map(c => c.domains), 1);
+        setHTML('webfilter-cats', w.categories.map(c => `
+          <div class="cat-row">
+            <span class="cat-name">${c.name}</span>
+            <div class="cat-bar-wrap"><div class="cat-bar" style="width:${(c.domains / maxDomains * 100).toFixed(0)}%"></div></div>
+            <span class="cat-count">${c.domains.toLocaleString()}</span>
+          </div>
+        `).join(''));
+        setHTML('webfilter-foot', `<span>${w.categories.length} categories active</span><span>${w.total_domains.toLocaleString()}+ domains</span>`);
+      }
+
+      if (data.multiwan) {
+        setHTML('multiwan-list', data.multiwan.wans.map(w => `
+          <div class="iface-row">
+            ${STATUS_ICONS[w.status] || STATUS_ICONS.missing}
+            <div class="iface-name">${w.name}</div>
+            <div class="iface-ip">${w.ip}</div>
+            <div class="iface-meta">${STATUS_LABELS[w.status] || w.status}</div>
+          </div>
+        `).join('') || '<div class="placeholder-note">No WAN data yet.</div>');
+      }
+
+      if (data.vpn) {
+        const v = data.vpn;
+        setHTML('vpn-stats', `
+          <div class="mini-stat"><b>${v.running ? 'Running' : 'Stopped'}</b><span>Status</span></div>
+          <div class="mini-stat"><b>${v.peer_count}</b><span>Clients</span></div>
+          <div class="mini-stat"><b>${v.connected_count}</b><span>Connected</span></div>
+        `);
+      }
+
+      if (data.geoblock) {
+        const g = data.geoblock;
+        setHTML('geoblock-stats', `
+          <div class="mini-stat"><b>${g.countries_blocked}</b><span>Countries</span></div>
+          <div class="mini-stat"><b>${g.geo_ip_ranges.toLocaleString()}</b><span>Geo Ranges</span></div>
+          <div class="mini-stat"><b>${g.threat_ip_ranges.toLocaleString()}</b><span>Threat Ranges</span></div>
+        `);
+      }
+
+      if (data.backup) {
+        const b = data.backup;
+        setHTML('backup-stats', b.has_backup ? `
+          <div class="mini-stat"><b>${b.last_backup_at}</b><span>Last Backup</span></div>
+          <div class="mini-stat"><b>${b.size_mb} MB</b><span>Size</span></div>
+          <div class="mini-stat"><b>${b.total_count}</b><span>Total Backups</span></div>
+        ` : `<div class="mini-stat"><b>&mdash;</b><span>No backups yet</span></div>`);
+      }
+
+      if (data.qos) {
+        const q = data.qos;
+        setHTML('qos-stats', `
+          <div class="mini-stat"><b>${q.active ? 'Active' : 'Inactive'}</b><span>Status</span></div>
+          <div class="mini-stat"><b>${q.network_count}</b><span>Networks Shaped</span></div>
+        `);
+      }
+
+      if (data.traffic && data.traffic.buckets.length > 0) {
+        const buckets = data.traffic.buckets;
+        const maxMb = Math.max(...buckets.map(b => b.mb), 0.001);
+        const w2 = 700, h2 = 140, pad = 6;
+        const stepX = buckets.length > 1 ? w2 / (buckets.length - 1) : 0;
+        const points = buckets.map((b, i) => {
+          const x = i * stepX;
+          const y = h2 - pad - ((b.mb / maxMb) * (h2 - pad * 2));
+          return [x, y];
+        });
+        const linePath = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+        const areaPath = linePath + ` L${w2},${h2} L0,${h2} Z`;
+        document.getElementById('traffic-svg').innerHTML = `
+          <path d="${areaPath}" fill="#3E8EED" opacity="0.12"></path>
+          <path d="${linePath}" fill="none" stroke="#3E8EED" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+        `;
+        document.getElementById('traffic-total').innerHTML = `<b>${data.traffic.total_mb_24h}</b> MB total`;
+      }
+
+      if (data.system) {
+        const s = data.system;
+        if (s.cpu_percent !== null) {
+          document.getElementById('v-cpu').innerHTML = `${s.cpu_percent}<span class="unit">%</span>`;
+          const bar = document.getElementById('v-cpu-bar');
+          bar.style.width = s.cpu_percent + '%';
+          bar.className = 'vital-fill ' + barClass(s.cpu_percent);
+        }
+        if (s.ram_percent !== null) {
+          document.getElementById('v-ram').innerHTML = `${s.ram_percent}<span class="unit">%</span>`;
+          const bar = document.getElementById('v-ram-bar');
+          bar.style.width = s.ram_percent + '%';
+          bar.className = 'vital-fill ' + barClass(s.ram_percent);
+        }
+        if (s.disk_percent !== null) {
+          document.getElementById('v-disk').innerHTML = `${s.disk_percent}<span class="unit">%</span>`;
+          const bar = document.getElementById('v-disk-bar');
+          bar.style.width = s.disk_percent + '%';
+          bar.className = 'vital-fill ' + barClass(s.disk_percent);
+        }
+        if (s.uptime_seconds !== null) {
+          document.getElementById('v-uptime').textContent = fmtUptime(s.uptime_seconds);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load status', e);
+    }
+  }
+
+  loadStatus();
+  setInterval(loadStatus, 15000);
+
+  const ALL_WIDGETS = {{ all_widgets|tojson }};
+  const ENABLED_WIDGETS = {{ enabled_widgets|tojson }};
+
+  function openCustomize() {
+    const backdrop = document.getElementById('customize-backdrop');
+    const list = document.getElementById('customize-list');
+    list.innerHTML = ALL_WIDGETS.map(w => `
+      <label class="customize-item">
+        <input type="checkbox" value="${w.key}" ${ENABLED_WIDGETS.includes(w.key) ? 'checked' : ''}>
+        ${w.label}
+      </label>
+    `).join('');
+    backdrop.classList.add('open');
+  }
+
+  function closeCustomize() {
+    document.getElementById('customize-backdrop').classList.remove('open');
+  }
+
+  function saveCustomize() {
+    const checked = Array.from(document.querySelectorAll('#customize-list input:checked')).map(el => el.value);
+    fetch('/api/dashboard-widgets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: checked }),
+    }).then(() => {
+      window.location.reload();
+    });
+  }
+</script>
+
+<div class="customize-modal-backdrop" id="customize-backdrop">
+  <div class="customize-modal">
+    <h3>Customize Dashboard</h3>
+    <div id="customize-list"></div>
+    <div class="customize-modal-actions">
+      <button class="btn" onclick="saveCustomize()" style="flex:1;">Save</button>
+      <button onclick="closeCustomize()" style="flex:1; padding:9px 18px; border:1px solid var(--line-strong); border-radius:8px; background:var(--paper); font-weight:600; font-size:12.5px; cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

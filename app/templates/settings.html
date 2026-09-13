@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stratum Gateway</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-900:#16325C; --blue-800:#1C3E6E; --blue-line:#2E5D91;
+    --accent:#3E8EED; --accent-dim:rgba(62,142,237,.12); --accent-2:#0EA5A0;
+    --amber:#F0A94E; --amber-dim:rgba(240,169,78,.15); --danger:#E5484D; --danger-dim:rgba(229,72,77,.12);
+    --canvas:#EEF2F6; --paper:#FFFFFF; --line:#D7DEE8; --line-strong:#C4CEDC; --widget-head:#F4F8FD;
+    --ash:#5B6472; --ash-dark:#97A0AF; --text:#101521; --text-dark:#E8EEF7;
+    --font-display:'Space Grotesk','Inter',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:var(--font-body); background:var(--canvas); color:var(--text); font-size:13.5px; -webkit-font-smoothing:antialiased;}
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer;}
+  .shell{display:flex; min-height:100vh;}
+  .sidebar{width:250px; flex-shrink:0; background:var(--blue-900); color:var(--text-dark); display:flex; flex-direction:column;}
+  .brand{display:flex; align-items:center; gap:10px; padding:20px 18px 16px;}
+  .brand-mark{width:32px; height:32px; flex-shrink:0;}
+  .brand-mark svg{width:100%; height:100%;}
+  .brand-name{font-family:var(--font-display); font-weight:600; font-size:15.5px; color:#fff;}
+  .brand-sub{font-size:10.5px; color:#8FA9CB; letter-spacing:.04em; margin-top:1px;}
+  .nav-scroll{flex:1; overflow-y:auto; padding:6px 10px 18px;}
+  .nav-group{margin-top:18px;}
+  .nav-group:first-child{margin-top:4px;}
+  .nav-group-label{font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:#6B87AC; padding:0 10px 7px;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:8px 10px; margin:1px 0; border-radius:7px; color:#B9CBE4; font-size:13px; font-weight:500;}
+  .nav-item svg{width:17px; height:17px; flex-shrink:0; opacity:.85;}
+  .nav-item:hover{background:var(--blue-800); color:#fff;}
+  .nav-item.active{background:var(--accent); color:#fff;}
+  .nav-item.active svg{opacity:1;}
+  .sidebar-foot{padding:14px 18px; border-top:1px solid var(--blue-line); display:flex; align-items:center; gap:9px;}
+  .sidebar-foot .avatar{width:26px; height:26px; border-radius:7px; background:var(--blue-800); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:11px; font-weight:600; color:#fff; border:1px solid var(--blue-line);}
+  .sidebar-foot .who{font-size:11.5px; color:#8FA9CB; line-height:1.3;}
+  .sidebar-foot .who b{color:#fff; font-weight:600; display:block; font-size:12px;}
+  .sidebar-foot .logout{margin-left:auto; color:#8FA9CB; font-size:11px;}
+  .sidebar-foot .logout:hover{color:#fff;}
+  .main{flex:1; min-width:0; display:flex; flex-direction:column;}
+  .topbar{height:58px; flex-shrink:0; background:var(--blue-900); display:flex; align-items:center; justify-content:space-between; padding:0 24px;}
+  .crumb b{font-family:var(--font-display); font-weight:600; color:#fff; font-size:15px;}
+  .crumb span{color:#8FA9CB; margin:0 6px;}
+  .content{flex:1; padding:24px 26px 60px; overflow-y:auto; max-width:1200px;}
+
+  .section-title{font-family:var(--font-display); font-weight:600; font-size:13px; color:var(--ash); text-transform:uppercase; letter-spacing:.04em; margin:22px 0 10px;}
+  .section-title:first-child{margin-top:0;}
+  .wan-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;}
+  .wan-card{background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; box-shadow:0 1px 2px rgba(16,21,33,.03);}
+  .wan-name{font-family:var(--font-mono); font-weight:600; font-size:14px; margin-bottom:8px;}
+  .wan-info{font-size:12.5px; color:var(--ash); margin-bottom:4px;}
+  .status{display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;}
+  .status.up{background:rgba(14,165,160,.15); color:#0A7B6A;}
+  .status.down{background:rgba(229,72,77,.15); color:#B3232A;}
+  .status.disabled{background:rgba(151,160,175,.2); color:#5B6472;}
+  .form-row{display:flex; align-items:center; gap:10px; margin-top:10px;}
+  .form-row select, .form-row input[type="checkbox"]{margin-left:0;}
+  .btn{padding:8px 16px; border:none; border-radius:7px; background:var(--blue-800); color:#fff; font-weight:600; font-size:12px; cursor:pointer;}
+  .btn:hover{background:var(--accent);}
+  .log-box{background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-top:20px; font-family:var(--font-mono); font-size:11px; white-space:pre-wrap; max-height:200px; overflow-y:auto;}
+  .info-banner{display:flex; gap:10px; align-items:flex-start; background:var(--accent-dim); border:1px solid rgba(62,142,237,.3); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:12px; color:#1D5AA3;}
+  .info-banner svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="24" height="4" rx="1.5" fill="#3E8EED"/><rect x="4" y="14" width="24" height="4" rx="1.5" fill="#6FB3F5" opacity=".9"/><rect x="4" y="20" width="24" height="4" rx="1.5" fill="#9DCBFA" opacity=".8"/></svg></div>
+      <div><div class="brand-name">Stratum</div><div class="brand-sub">GATEWAY &middot; v0.1</div></div>
+    </div>
+    <nav class="nav-scroll">
+      <div class="nav-group"><a class="nav-item" href="/"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="3" width="6.5" height="6.5" rx="1.3"/><rect x="3" y="10.5" width="6.5" height="6.5" rx="1.3"/><rect x="10.5" y="10.5" width="6.5" height="6.5" rx="1.3"/></svg>Overview</a></div>
+      <div class="nav-group"><div class="nav-group-label">Network</div>
+        <a class="nav-item" href="/interfaces"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4" r="1.8"/><circle cx="4" cy="16" r="1.8"/><circle cx="16" cy="16" r="1.8"/><path d="M10 5.8V10M10 10L4 14.3M10 10l6 4.3"/></svg>Interfaces &amp; VLANs</a>
+        <a class="nav-item" href="/multi-wan"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c1.5-5 5-8 8-8s6.5 3 8 8"/><path d="M2 12l3-1.2M18 12l-3-1.2"/><circle cx="10" cy="15.5" r="1.6"/></svg>Multi-WAN &amp; Failover</a>
+        <a class="nav-item" href="/vpn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="9" rx="1.5"/><path d="M6 8V6a4 4 0 0 1 8 0v2"/></svg>VPN</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Firewall</div>
+        <a class="nav-item" href="/rules"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12M4 8h12M4 12h8"/></svg>Rules</a>
+        <a class="nav-item" href="/blocklist"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5 17 6v5c0 4-3 6.5-7 8-4-1.5-7-4-7-8V6Z"/><path d="M7 10l2 2 4-4"/></svg>IP Block List</a>
+        <a class="nav-item" href="/nat"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11M13 6l-2.5-2.5M13 6l-2.5 2.5"/><path d="M18 14H7M7 14l2.5-2.5M7 14l2.5 2.5"/></svg>NAT / Port Forwarding</a>
+        <a class="nav-item" href="/nat/1to1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="6" height="8" rx="1.2"/><rect x="11.5" y="6" width="6" height="8" rx="1.2"/></svg>1:1 NAT</a>
+        <a class="nav-item" href="/objects"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2 10 3l6 0 0 6-7.2 7.2a1.4 1.4 0 0 1-2 0L3 12.2a1.4 1.4 0 0 1 0-2Z"/></svg>Objects</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Services</div>
+        <a class="nav-item" href="/dhcp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="5" rx="1.3"/><rect x="3" y="12" width="14" height="5" rx="1.3"/></svg>DHCP Server</a>
+        <a class="nav-item" href="/dns"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2 2.2 12 0 14M10 3c-2 2-2.2 12 0 14"/></svg>DNS Resolver</a>
+        <a class="nav-item" href="/qos"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a7 7 0 0 1 14 0"/><path d="M10 15V8M10 8l3 2"/></svg>Traffic Shaping</a>
+        <a class="nav-item" href="/snmp"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11h3l2-5 3 9 2-7 2 3h4"/></svg>SNMP</a>
+        <a class="nav-item" href="#"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16V9M9 16V4M14 16v-6M18 16H2"/></svg>NetFlow</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">Threat Protection</div>
+        <a class="nav-item" href="/ids"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c2-3.3 5-5 8-5s6 1.7 8 5c-2 3.3-5 5-8 5s-6-1.7-8-5Z"/></svg>Intrusion Detection</a>
+        <a class="nav-item" href="/crowdsec"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.3"/><circle cx="14" cy="8" r="1.8"/></svg>CrowdSec</a>
+        <a class="nav-item" href="/geoblock"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17.5S4 12.8 4 8a6 6 0 0 1 12 0c0 4.8-6 9.5-6 9.5Z"/></svg>Country Blocking</a>
+        <a class="nav-item" href="/webfilter"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14l-5.5 7v4.5L8.5 17V11Z"/></svg>Web Filter</a>
+      </div>
+      <div class="nav-group"><div class="nav-group-label">System</div>
+        <a class="nav-item" href="/services"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="4" rx="1.2"/><rect x="3" y="10" width="14" height="4" rx="1.2"/><circle cx="6" cy="6" r=".6" fill="currentColor"/><circle cx="6" cy="12" r=".6" fill="currentColor"/></svg>Services</a>
+        <a class="nav-item" href="/logs"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M4 10h12M4 15h6"/></svg>Logs</a>
+        <a class="nav-item active" href="/settings"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"/><path d="M10 3v2M10 15v2M17 10h-2M5 10H3"/></svg>General Settings</a>
+        <a class="nav-item" href="/backup"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v9M6 8l4 4 4-4M4 15h12"/></svg>Backup</a>
+        <a class="nav-item" href="/update"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v6l4-2M10 2v6l-4-2"/><path d="M4 10a6 6 0 1 0 12 0"/><path d="M16 6v4h-4"/></svg>Software Update</a>
+        <a class="nav-item" href="/terminal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="16" height="12" rx="1.5"/><path d="M5.5 8l2.5 2.5-2.5 2.5M10 13h4"/></svg>Terminal</a>
+        <a class="nav-item" href="/captive-portal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 3a10 10 0 0 1 0 14M10 3a10 10 0 0 0 0 14M3 10h14"/></svg>Captive Portal</a>
+        <a class="nav-item" href="/users"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Users</a>
+      </div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="avatar">{{ username[:2]|upper }}</div>
+      <div class="who"><b>{{ username }}@stratum</b>Administrator session</div>
+      <a class="logout" href="/logout">Log out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar"><div class="crumb"><b>System</b><span>/</span><b>General Settings</b></div></div>
+    <div class="content">
+      {% if saved %}<div style="background:var(--accent-dim); border:1px solid var(--accent); border-radius:8px; padding:10px 14px; margin-bottom:16px; color:var(--accent);">Settings saved.</div>{% endif %}
+      {% if error %}<div style="background:var(--danger-dim); border:1px solid var(--danger); border-radius:8px; padding:10px 14px; margin-bottom:16px; color:#B3232A;">{{ error }}</div>{% endif %}
+
+      <div class="section-title">System Identity</div>
+      <form method="post" action="/settings/hostname" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-bottom:16px; display:flex; gap:14px; align-items:flex-end;">
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Hostname</label><input type="text" name="hostname" value="{{ hostname }}" required style="width:220px; padding:9px 11px; border:1.5px solid var(--line-strong); border-radius:7px; font-size:12.5px; font-family:var(--font-mono);"></div>
+        <button type="submit" class="btn">Save Hostname</button>
+      </form>
+
+      <form method="post" action="/settings/timezone" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-end;">
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Timezone</label>
+          <select name="timezone" required style="width:280px; padding:9px 11px; border:1.5px solid var(--line-strong); border-radius:7px; font-size:12.5px;">
+            {% for tz in timezones %}
+            <option value="{{ tz }}" {{ 'selected' if tz == timezone }}>{{ tz }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn">Save Timezone</button>
+      </form>
+
+      <div class="section-title">Internal Certificate Authority</div>
+      <div style="font-size:12px; color:var(--ash); margin-bottom:14px;">Used to sign the panel's own HTTPS certificate, and can later be used to sign per-site certificates for SSL inspection. Distribute the CA certificate below to client devices as a trusted root to remove browser warnings.</div>
+
+      {% if ca.exists %}
+      <div style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-bottom:16px;">
+        <div class="kv"><div class="kv-label">Subject</div><div class="kv-val" style="font-family:var(--font-mono); font-size:11.5px;">{{ ca.subject }}</div></div>
+        <div class="kv"><div class="kv-label">Valid</div><div class="kv-val">{{ ca.not_before }} &rarr; {{ ca.not_after }}</div></div>
+        <div class="kv"><div class="kv-label">Fingerprint (SHA-256)</div><div class="kv-val" style="font-family:var(--font-mono); font-size:10.5px; word-break:break-all;">{{ ca.fingerprint }}</div></div>
+        <div style="margin-top:12px;"><a href="/settings/ca/download" class="edit-iface-btn">Download CA Certificate</a></div>
+      </div>
+      {% else %}
+      <div style="background:var(--amber-dim); border:1px solid var(--amber); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:12px;">No internal CA exists yet. Create one below.</div>
+      {% endif %}
+
+      <form method="post" action="/settings/ca/create" onsubmit="return confirm('{% if ca.exists %}Replace{% else %}Create{% endif %} the internal CA? Existing CA-signed certificates will no longer validate against it.');" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-bottom:24px; display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Common Name</label><input type="text" name="cn" required value="Stratum Gateway Internal CA" style="width:200px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Organization</label><input type="text" name="o" required value="Ethno Hotels" style="width:150px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Unit</label><input type="text" name="ou" required value="IT" style="width:90px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Country</label><input type="text" name="c" required value="TR" maxlength="2" style="width:60px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">State</label><input type="text" name="st" required value="Antalya" style="width:110px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">City</label><input type="text" name="l" required value="Belek" style="width:100px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Valid (days)</label><input type="number" name="days" required value="3650" style="width:90px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <button type="submit" class="btn">{{ 'Replace CA' if ca.exists else 'Create CA' }}</button>
+      </form>
+
+      <div class="section-title">Panel HTTPS Certificate</div>
+      <div style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-bottom:16px;">
+        <div class="kv"><div class="kv-label">Subject</div><div class="kv-val" style="font-family:var(--font-mono); font-size:11.5px;">{{ cert.subject }}</div></div>
+        <div class="kv"><div class="kv-label">Issuer</div><div class="kv-val" style="font-family:var(--font-mono); font-size:11.5px;">{{ cert.issuer }}</div></div>
+        <div class="kv"><div class="kv-label">Valid</div><div class="kv-val">{{ cert.not_before }} &rarr; {{ cert.not_after }}</div></div>
+        <div class="kv"><div class="kv-label">Type</div><div class="kv-val">{{ 'Self-signed' if cert.is_self_signed else 'Signed by internal CA' }}</div></div>
+      </div>
+
+      {% if ca.exists %}
+      <form method="post" action="/settings/cert/sign-with-ca" onsubmit="return confirm('Replace the panel certificate with one signed by the internal CA? The panel will restart and briefly disconnect (a few seconds).');" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-bottom:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Common Name</label><input type="text" name="cn" required value="stratum.local" style="width:200px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Valid (days)</label><input type="number" name="days" required value="825" style="width:90px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <button type="submit" class="btn">Sign New Cert with Internal CA</button>
+      </form>
+      {% endif %}
+
+      <form method="post" action="/settings/cert/self-signed" onsubmit="return confirm('Replace the panel certificate with a new self-signed one? The panel will restart and briefly disconnect (a few seconds).');" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Common Name</label><input type="text" name="cn" required value="stratum.local" style="width:180px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Organization</label><input type="text" name="o" required value="Ethno Hotels" style="width:140px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Unit</label><input type="text" name="ou" required value="IT" style="width:80px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Country</label><input type="text" name="c" required value="TR" maxlength="2" style="width:55px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">State</label><input type="text" name="st" required value="Antalya" style="width:100px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">City</label><input type="text" name="l" required value="Belek" style="width:90px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <div><label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Valid (days)</label><input type="number" name="days" required value="825" style="width:90px; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px;"></div>
+        <button type="submit" class="btn">Generate Self-Signed Cert</button>
+      </form>
+
+      <div class="section-title" style="color:var(--danger);">System Power</div>
+      <div class="info-banner" style="background:var(--danger-dim); border-color:rgba(229,72,77,.3); color:#B3232A;">
+        These actions immediately affect gateway connectivity. Halt requires physical or remote power access to bring the system back online.
+      </div>
+
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; flex:1; min-width:260px;">
+          <div style="font-weight:600; font-size:13px; margin-bottom:8px;">Reboot Gateway</div>
+          <div style="font-size:12px; color:var(--ash); margin-bottom:12px;">Restarts the system. All connections will drop for 1-2 minutes.</div>
+          <form id="rebootForm" method="post" action="/settings/power/reboot" onsubmit="return handlePowerSubmit(event, 'reboot');">
+            <input type="text" name="confirm_text" id="rebootConfirm" placeholder="Type REBOOT to confirm" required
+                   style="width:100%; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; font-family:var(--font-mono); margin-bottom:10px;">
+            <button type="submit" class="btn" style="background:var(--amber); color:#4A2E00; width:100%;">Reboot Now</button>
+          </form>
+        </div>
+
+        <div style="background:var(--paper); border:1px solid var(--danger); border-radius:10px; padding:16px; flex:1; min-width:260px;">
+          <div style="font-weight:600; font-size:13px; margin-bottom:8px; color:var(--danger);">Halt (Power Off) Gateway</div>
+          <div style="font-size:12px; color:var(--ash); margin-bottom:12px;">Shuts down the system completely. Requires physical/remote power to restart.</div>
+          <form id="haltForm" method="post" action="/settings/power/halt" onsubmit="return handlePowerSubmit(event, 'halt');">
+            <input type="text" name="confirm_text" id="haltConfirm" placeholder="Type HALT to confirm" required
+                   style="width:100%; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; font-family:var(--font-mono); margin-bottom:10px;">
+            <button type="submit" class="btn" style="background:var(--danger); width:100%;">Halt Now</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="section-title" style="color:var(--danger);">Factory Reset</div>
+      <div class="info-banner" style="background:var(--danger-dim); border-color:rgba(229,72,77,.3); color:#B3232A;">
+        This ERASES all firewall rules, network assignments, VPN configuration, and panel credentials, returning the gateway to its just-installed state. The system reboots automatically afterward. This cannot be undone.
+      </div>
+      <div style="background:var(--paper); border:1px solid var(--danger); border-radius:10px; padding:16px; margin-bottom:24px; max-width:420px;">
+        <div style="font-weight:600; font-size:13px; margin-bottom:8px; color:var(--danger);">Reset to Factory Defaults</div>
+        <div style="font-size:12px; color:var(--ash); margin-bottom:12px;">All configuration will be lost. A new admin password will be generated on next boot.</div>
+        <form id="factoryResetForm" method="post" action="/settings/factory-reset" onsubmit="return document.getElementById('factoryResetConfirm').value === 'FACTORY RESET' ? confirm('This will ERASE all configuration and reboot the gateway. This cannot be undone. Continue?') : (alert('Please type FACTORY RESET exactly to confirm.'), false);">
+          <input type="text" name="confirm_text" id="factoryResetConfirm" placeholder="Type FACTORY RESET to confirm" required
+                 style="width:100%; padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; font-family:var(--font-mono); margin-bottom:10px;">
+          <button type="submit" class="btn" style="background:var(--danger); width:100%;">Erase and Reset Gateway</button>
+        </form>
+      </div>
+
+      <div class="section-title">Captive Portal - RADIUS Authentication Servers</div>
+      <div class="info-banner">
+        Configure remote RADIUS server(s) used for captive portal authentication. Stratum Gateway acts as a RADIUS client only (no local RADIUS server required).
+      </div>
+
+      <table style="width:100%; border-collapse:collapse; margin-bottom:16px; font-size:12px;">
+        <thead>
+          <tr style="border-bottom:1.5px solid var(--line-strong); text-align:left;">
+            <th style="padding:8px 6px;">Name</th>
+            <th style="padding:8px 6px;">Host</th>
+            <th style="padding:8px 6px;">Auth Port</th>
+            <th style="padding:8px 6px;">NAS Identifier</th>
+            <th style="padding:8px 6px;">Status</th>
+            <th style="padding:8px 6px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if radius_servers %}
+            {% for srv in radius_servers %}
+            <tr style="border-bottom:1px solid var(--line);">
+              <td style="padding:8px 6px;">{{ srv.name }}</td>
+              <td style="padding:8px 6px; font-family:var(--font-mono);">{{ srv.host }}</td>
+              <td style="padding:8px 6px;">{{ srv.auth_port }}</td>
+              <td style="padding:8px 6px;">{{ srv.nas_identifier }}</td>
+              <td style="padding:8px 6px;">
+                {% if srv.enabled %}<span style="color:var(--success, #2E9E5B); font-weight:600;">Enabled</span>{% else %}<span style="color:var(--ash);">Disabled</span>{% endif %}
+              </td>
+              <td style="padding:8px 6px;">
+                <form method="post" action="/settings/radius/toggle" style="display:inline;">
+                  <input type="hidden" name="server_id" value="{{ srv.id }}">
+                  <input type="hidden" name="enabled" value="{% if srv.enabled %}false{% else %}true{% endif %}">
+                  <button type="submit" class="btn" style="padding:4px 10px; font-size:11px;">{% if srv.enabled %}Disable{% else %}Enable{% endif %}</button>
+                </form>
+                <form method="post" action="/settings/radius/delete" style="display:inline;" onsubmit="return confirm('Delete this RADIUS server?');">
+                  <input type="hidden" name="server_id" value="{{ srv.id }}">
+                  <button type="submit" class="btn" style="padding:4px 10px; font-size:11px; background:var(--danger); color:#fff;">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="6" style="padding:12px 6px; color:var(--ash); text-align:center;">No RADIUS servers configured yet.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      <form method="post" action="/settings/radius/add" id="radiusAddForm" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+        <div>
+          <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Name</label>
+          <input type="text" name="name" required placeholder="Hotel RADIUS" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; width:150px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Host / IP</label>
+          <input type="text" name="host" id="radiusHost" required placeholder="203.0.113.10" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; font-family:var(--font-mono); width:140px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Shared Secret</label>
+          <input type="password" name="secret" id="radiusSecret" required placeholder="secret" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; font-family:var(--font-mono); width:130px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Auth Port</label>
+          <input type="number" name="auth_port" id="radiusAuthPort" value="1812" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; width:80px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Acct Port</label>
+          <input type="number" name="acct_port" value="1813" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; width:80px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">NAS Identifier</label>
+          <input type="text" name="nas_identifier" value="stratum-gateway" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; width:130px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Timeout (s)</label>
+          <input type="number" name="timeout" id="radiusTimeout" value="5" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; width:70px;">
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn" id="radiusTestBtn" onclick="testRadiusConnection()" style="background:var(--accent-dim); color:#1D5AA3;">Test Connection</button>
+          <button type="submit" class="btn">Add Server</button>
+        </div>
+        <div id="radiusTestResult" style="width:100%; font-size:12px; margin-top:4px;"></div>
+      </form>
+
+      <div class="section-title" id="notifications">Email Notifications</div>
+      <div class="info-banner">
+        Configure an SMTP server to receive email alerts for WAN status changes and CrowdSec bans.
+      </div>
+
+      <form method="post" action="/settings/notifications/save" style="background:var(--paper); border:1px solid var(--line-strong); border-radius:10px; padding:16px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+          <input type="checkbox" id="emailEnabledChk" {% if notif_config.email_enabled %}checked{% endif %} onchange="document.getElementById('emailEnabledHidden').value = this.checked ? 'true' : 'false';" style="width:16px; height:16px;">
+          <input type="hidden" id="emailEnabledHidden" name="email_enabled" value="{{ 'true' if notif_config.email_enabled else 'false' }}">
+          <label for="emailEnabledChk" style="font-weight:600; font-size:13px;">Enable Email Notifications</label>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">SMTP Host</label>
+            <input type="text" name="smtp_host" value="{{ notif_config.smtp_host }}" placeholder="smtp.gmail.com" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; font-family:var(--font-mono); width:180px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">SMTP Port</label>
+            <input type="number" name="smtp_port" value="{{ notif_config.smtp_port }}" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; width:80px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Username</label>
+            <input type="text" name="smtp_username" value="{{ notif_config.smtp_username }}" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; width:180px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">Password</label>
+            <input type="password" name="smtp_password" placeholder="{% if notif_config.smtp_password %}(unchanged){% else %}password{% endif %}" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; width:150px;">
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; padding-bottom:8px;">
+            <input type="checkbox" id="smtpTlsChk" {% if notif_config.smtp_use_tls %}checked{% endif %} onchange="document.getElementById('smtpTlsHidden').value = this.checked ? 'true' : 'false';" style="width:16px; height:16px;">
+            <input type="hidden" id="smtpTlsHidden" name="smtp_use_tls" value="{{ 'true' if notif_config.smtp_use_tls else 'false' }}">
+            <label for="smtpTlsChk" style="font-size:12px;">Use TLS</label>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">From Address</label>
+            <input type="text" name="from_address" value="{{ notif_config.from_address }}" placeholder="stratum-alert@example.com" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; font-family:var(--font-mono); width:220px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:10.5px; font-weight:600; color:var(--ash); margin-bottom:5px; text-transform:uppercase;">To Address</label>
+            <input type="text" name="to_address" value="{{ notif_config.to_address }}" placeholder="admin@example.com" style="padding:8px 10px; border:1.5px solid var(--line-strong); border-radius:6px; font-size:12px; font-family:var(--font-mono); width:220px;">
+          </div>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:18px; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="notifWanDownChk" {% if notif_config.notify_wan_down %}checked{% endif %} onchange="document.getElementById('notifWanDownHidden').value = this.checked ? 'true' : 'false';" style="width:16px; height:16px;">
+            <input type="hidden" id="notifWanDownHidden" name="notify_wan_down" value="{{ 'true' if notif_config.notify_wan_down else 'false' }}">
+            <label for="notifWanDownChk" style="font-size:12px;">Notify on WAN Down</label>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="notifWanUpChk" {% if notif_config.notify_wan_up %}checked{% endif %} onchange="document.getElementById('notifWanUpHidden').value = this.checked ? 'true' : 'false';" style="width:16px; height:16px;">
+            <input type="hidden" id="notifWanUpHidden" name="notify_wan_up" value="{{ 'true' if notif_config.notify_wan_up else 'false' }}">
+            <label for="notifWanUpChk" style="font-size:12px;">Notify on WAN Restored</label>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" id="notifCrowdsecChk" {% if notif_config.notify_crowdsec_ban %}checked{% endif %} onchange="document.getElementById('notifCrowdsecHidden').value = this.checked ? 'true' : 'false';" style="width:16px; height:16px;">
+            <input type="hidden" id="notifCrowdsecHidden" name="notify_crowdsec_ban" value="{{ 'true' if notif_config.notify_crowdsec_ban else 'false' }}">
+            <label for="notifCrowdsecChk" style="font-size:12px;">Notify on CrowdSec Ban</label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" style="background:var(--accent, #2E6EE8); color:#fff;">Save Notification Settings</button>
+      </form>
+
+      <form method="post" action="/settings/notifications/test" style="display:inline;">
+        <button type="submit" class="btn" style="background:var(--accent-dim); color:#1D5AA3;">Send Test Email</button>
+      </form>
+    </div>
+  </div>
+</div>
+<div id="powerOverlay" style="display:none; position:fixed; inset:0; background:#0A0E14; z-index:9999; align-items:center; justify-content:center; flex-direction:column; font-family:var(--font-mono, monospace); color:#E8ECF1;">
+  <div style="width:52px; height:52px; border:3px solid rgba(255,255,255,0.15); border-top-color:#F5A623; border-radius:50%; animation:powerSpin 1s linear infinite; margin-bottom:24px;"></div>
+  <div id="powerTitle" style="font-size:18px; font-weight:600; margin-bottom:8px;">Rebooting Gateway...</div>
+  <div id="powerSubtitle" style="font-size:13px; color:#9AA5B1; max-width:380px; text-align:center; line-height:1.5;">The system is restarting. This page will automatically reload once the gateway is back online.</div>
+  <div id="powerElapsed" style="font-size:12px; color:#5C6773; margin-top:20px;">Elapsed: 0s</div>
+</div>
+<style>
+@keyframes powerSpin { to { transform: rotate(360deg); } }
+</style>
+<script>
+function handlePowerSubmit(evt, action) {
+  evt.preventDefault();
+  var confirmVal = action === 'reboot' ? document.getElementById('rebootConfirm').value : document.getElementById('haltConfirm').value;
+  var expected = action === 'reboot' ? 'REBOOT' : 'HALT';
+  if (confirmVal.trim() !== expected) {
+    alert('Please type ' + expected + ' to confirm.');
+    return false;
+  }
+  var msg = action === 'reboot' ? 'Reboot the gateway now?' : 'Halt the gateway? It will NOT restart automatically.';
+  if (!confirm(msg)) return false;
+  var form = document.getElementById(action === 'reboot' ? 'rebootForm' : 'haltForm');
+  var formData = new FormData(form);
+  fetch(form.action, { method: 'POST', body: formData }).catch(function(){});
+  showPowerOverlay(action);
+  return false;
+}
+function showPowerOverlay(action) {
+  var overlay = document.getElementById('powerOverlay');
+  var title = document.getElementById('powerTitle');
+  var subtitle = document.getElementById('powerSubtitle');
+  var elapsedEl = document.getElementById('powerElapsed');
+  overlay.style.display = 'flex';
+  if (action === 'halt') {
+    title.textContent = 'Halting Gateway...';
+    subtitle.textContent = 'The system is shutting down and will NOT restart automatically. Physical or remote power access is required to bring it back online.';
+    var spinner = overlay.querySelector('div');
+    spinner.style.borderTopColor = '#E5484D';
+    setTimeout(function() {
+      title.textContent = 'Gateway is powered off.';
+      subtitle.textContent = 'You may close this window.';
+      spinner.style.display = 'none';
+    }, 8000);
+    return;
+  }
+  var startTime = Date.now();
+  var elapsedTimer = setInterval(function() {
+    var secs = Math.floor((Date.now() - startTime) / 1000);
+    elapsedEl.textContent = 'Elapsed: ' + secs + 's';
+  }, 1000);
+  setTimeout(function checkOnline() {
+    fetch('/login?_=' + Date.now(), { method: 'GET', cache: 'no-store' })
+      .then(function(resp) {
+        clearInterval(elapsedTimer);
+        title.textContent = 'Gateway is back online!';
+        subtitle.textContent = 'Redirecting...';
+        setTimeout(function() { window.location.href = '/'; }, 1200);
+      })
+      .catch(function() {
+        setTimeout(checkOnline, 3000);
+      });
+  }, 8000);
+}
+</script>
+
+<script>
+function testRadiusConnection() {
+  var btn = document.getElementById('radiusTestBtn');
+  var resultDiv = document.getElementById('radiusTestResult');
+  var host = document.getElementById('radiusHost').value;
+  var secret = document.getElementById('radiusSecret').value;
+  var authPort = document.getElementById('radiusAuthPort').value;
+  var timeout = document.getElementById('radiusTimeout').value;
+
+  if (!host || !secret) {
+    resultDiv.innerHTML = '<span style="color:var(--danger);">Host and Secret are required to test.</span>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Testing...';
+  resultDiv.innerHTML = '';
+
+  var formData = new URLSearchParams();
+  formData.append('host', host);
+  formData.append('secret', secret);
+  formData.append('auth_port', authPort);
+  formData.append('timeout', timeout);
+
+  fetch('/settings/radius/test', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: formData
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    btn.disabled = false;
+    btn.textContent = 'Test Connection';
+    if (data.success) {
+      resultDiv.innerHTML = '<span style="color:var(--success, #2E9E5B);">' + data.message + '</span>';
+    } else {
+      resultDiv.innerHTML = '<span style="color:var(--danger);">' + data.message + '</span>';
+    }
+  })
+  .catch(function(err) {
+    btn.disabled = false;
+    btn.textContent = 'Test Connection';
+    resultDiv.innerHTML = '<span style="color:var(--danger);">Request failed: ' + err + '</span>';
+  });
+}
+</script>
+</body>
+</html>
