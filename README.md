@@ -22,6 +22,7 @@ signed updates with ZFS boot environments.
   environment before every update; the previous version can be booted at any time.
 - **No modal dialogs, no client-side build.** Server-rendered pages with small vanilla JavaScript modules, dark
   and light themes, usable on a phone.
+- **Bilingual Interface (EN/TR).** Both the management panel and the official website fully support English and Turkish, with seamless language switching.
 
 ## Features
 
