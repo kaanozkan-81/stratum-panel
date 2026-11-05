@@ -1,8 +1,192 @@
-# Changelog
-
 All notable changes to Stratum FW are listed here, newest first. Stratum FW updates itself from the signed
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
+
+## 0.16.0 - 2026-11-05
+
+### Added
+- **Gateways** (Interfaces > Gateways): every WAN-type interface has a gateway with live status (online,
+  warning, down), latency, packet loss and the last hour as a small graph.
+- A new gateway monitor service probes each gateway once per second from the WAN's own address, also when
+  nobody has the panel open. A gateway is down when the packet loss or latency over the last 30 seconds
+  reaches its limits (20 % and 500 ms by default, set per gateway), or when its interface has no link or
+  address; half of a limit shows a warning.
+- Per gateway: a description, a monitor address (for providers whose gateway does not answer pings; it is
+  always reached through that gateway), the limits, and a priority for the WAN failover that follows in
+  0.16.1.
+- A gateway that goes down while its link is up, and its recovery, are reported by the notifications.
+
+### Changed
+- The dashboard's WAN panel and the MCP tool wan_status now use the gateway monitor (one probe per second
+  instead of three every 30 seconds from the panel).
+
+## 0.15.3 - 2026-11-05
+
+### Fixed
+- Intrusion detection on a WAN interface raised almost no alerts: the firewall's public address was not part
+  of the protected networks (HOME_NET), so traffic from the internet to it did not match most rules. The WAN
+  addresses are now included. When a PPPoE or DHCP address changes, the new address is taken over within
+  five minutes and Suricata restarts; while a WAN is reconnecting, nothing changes.
+
+## 0.15.2 - 2026-11-05
+
+### Added
+- Dashboard: the Protection card shows the intrusion alerts of the last 24 hours (high-severity ones in red)
+  and the three most frequent rules, linked to the Alerts page.
+- Notifications: a new event for high-severity intrusion alerts, by e-mail or Telegram. Each rule is reported
+  at most once every 6 hours, disabled rules never. It can be switched off on System > Settings >
+  Notifications like the other events, and the alerts appear in the dashboard's Alerts card.
+- MCP: a new tool, ids_alerts, gives AI assistants the intrusion detection state, the last 24 hours in
+  numbers, the most frequent rules and the latest alerts, filtered by severity or text.
+
+## 0.15.1 - 2026-11-05
+
+### Fixed
+- Intrusion detection could not start on systems installed from the image: Suricata needs the netmap
+  library, which the minimal base system did not include. The package now depends on it (FreeBSD-netmap),
+  so updating installs it, and new installations include it. The pre-check had stopped the Apply, so no
+  system was changed.
+
+## 0.15.0 - 2026-11-05
+
+### Added
+- **Intrusion detection** (Services > Intrusion Detection) with Suricata 8 in IDS mode: the traffic of the
+  chosen interfaces is compared with the ET Open rules and alerts are raised for malware calling home,
+  exploits, scans, phishing, coin miners and more. Nothing is blocked yet; blocking (IPS) follows once the
+  alerts have shown which rules fit the network.
+- Rule categories in three groups, with a recommended selection (threats on, noisy policy and information
+  rules off) and the number of rules in each category.
+- Automatic rule updates on a schedule (daily by default), like the blocklists. A new rule set is downloaded
+  only when it changed, and it is tested with Suricata before it is used. A failed download or test keeps
+  the previous rules.
+- Alerts page: newest first, with severity, rule, source, destination and interface, a search and a
+  severity filter. A rule that alerts on normal traffic can be disabled with one click and enabled again
+  on the Settings tab; the change takes effect at once, without Apply and without a gap in detection.
+- Suricata runs supervised and is started again if it stops. Memory limits follow the installed memory.
+  Its logs are rotated with the other logs, and failed rule downloads are reported by the notifications.
+
+### Changed
+- Opening the MCP address in a web browser now shows a short explanation instead of an empty error page.
+- The stratum-fw package now depends on Suricata.
+
+## 0.14.0 - 2026-11-04
+
+### Added
+- **MCP server** (Model Context Protocol, System > Settings > MCP): AI assistants such as Claude, ChatGPT,
+  Gemini or DeepSeek (through an MCP client) can read the firewall's live state and answer questions like
+  "what was blocked in the last hour?" or "which devices are on the guest network?". 14 read-only tools:
+  system status, interfaces, WAN status, services, firewall log, blocked-traffic summary, firewall rules,
+  NAT rules, DHCP leases, VPN sessions, alerts, configuration changes, blocklists and traffic statistics.
+  Nothing can be changed through MCP.
+- Access tokens for MCP, one per assistant or computer, optionally limited to given addresses. A token is
+  shown once and stored only as a hash; last use, address and number of calls are shown, and a token can be
+  revoked at any time. Wrong tokens count as failed sign-ins and block the address.
+- Each tool can be switched off, so its data is never sent to an AI provider. Passwords, keys, tokens and
+  VPN configurations are never returned.
+- The panel certificate can be downloaded for MCP clients that must trust it.
+
+## 0.13.2 - 2026-11-04
+
+### Added
+- Dashboard **Alerts**: the latest events (WAN down or up again, new WAN address, blocked sign-ins, failed
+  applies, automatic rollbacks, available updates, full disk, high temperature, certificate and blocklist
+  problems) with the time and whether each was sent by e-mail or Telegram. Events are now recorded even when
+  no notification channel is set up; the last 100 are kept.
+- Dashboard **DHCP**: per network, the devices with an active lease, how much of the address pool is in use
+  (amber from 75 %, red from 90 %) and the number of static mappings.
+
+## 0.13.1 - 2026-11-04
+
+### Added
+- Dashboard **WAN panel**: connection type, gateway, latency and packet loss to the gateway (measured every 30
+  seconds, with a curve), how long the connection has been up, today's download and upload, and the live rate;
+  latency to the internet (1.1.1.1) in the status strip.
+- Dashboard **VPN connections**: every connected OpenVPN user and active WireGuard peer with the address it
+  connects from, its VPN address, connection time or last handshake, and the data received and sent.
+- Opening the dashboard checks for software updates (at most every 5 minutes), like pfSense, and shows the
+  result as soon as it is there.
+
+### Fixed
+- Firewall log: on FreeBSD 15 every logged packet was given the name of the wrong rule (often "ipv6-off"),
+  because pf now writes rule numbers as "3..1/0". The Firewall Log page, the dashboard and remote syslog
+  show the right rule again; entries logged before the update keep their old names.
+- Dashboard: the CPU tile no longer opens the traffic graphs; the live traffic under the chart uses the same
+  measurement as the interface list.
+
+## 0.13.0 - 2026-11-04
+
+### Changed
+- **New dashboard**:
+  - Status strip: host name, version and update state, every WAN connection with its address and live
+    download / upload, uptime, time of the last configuration change, firewall state.
+  - Key figures: CPU with a 5-minute curve, memory, disk, temperature, connections against the state table
+    limit, and packets blocked in the last hour with a curve; colours change at warning levels.
+  - Traffic of the last hour per interface with average and peak.
+  - Protection: IP and DNS blocklists, packets stopped by the IP blocklists, addresses blocked after failed
+    sign-ins, OpenVPN users and WireGuard peers online, the rules that blocked most in the last hour.
+  - Interfaces with their description as the name, status, link speed, address and live traffic; services
+    with a running / stopped summary.
+  - Top blocked sources and ports of the last hour, and the latest configuration changes (applied, kept,
+    reverted, failed).
+  - Works in the dark and light themes and on phones.
+
+## 0.12.6 - 2026-11-04
+
+### Added
+- **System > Settings > Networking**: switch off hardware offload (LRO, TSO, checksum) on every physical port -
+  set live without restarting the ports and kept after a reboot - with the current state per port; CPU power
+  management (adaptive, maximum performance, economy); ARP logging and ARP entry lifetime; IPv6 status.
+- **System > Settings > Tunables**: run-time system values (sysctl) that matter on a firewall, with the values
+  pfSense uses as a recommendation and the current value of each, plus own run-time tunables. Values are set
+  with Apply and kept after a reboot (/etc/sysctl.conf.local); a value set back to default gets the value it
+  had before. Values Stratum FW manages itself cannot be changed here.
+- All System > Settings tabs are now available.
+
+### Changed
+- An existing /etc/sysctl.conf.local is kept as /etc/sysctl.conf.local.stratum-orig; the file is now written
+  from Settings > Tunables.
+
+## 0.12.5 - 2026-11-04
+
+### Added
+- **Automatic blocklist updates on a schedule** (Firewall > Blocklists, IP and DNSBL): every hour, every 6 or
+  12 hours, daily at a chosen hour, weekly on a chosen day, or off. The page shows the next automatic update. A
+  missed update (firewall switched off) runs at the next hour, and after a failed update the next hour tries
+  again. Schedule changes take effect at once, without Apply. Defaults keep the earlier rhythm (IP lists hourly,
+  DNS lists daily at 03:00).
+
+### Fixed
+- The update log of the IP blocklists stayed hidden while an update ran (two elements on the page shared the
+  same id).
+
+## 0.12.4 - 2026-11-04
+
+### Added
+- **System > Settings > Notifications**: messages from the firewall by **Telegram** (bot) and **e-mail**
+  (SMTP with STARTTLS or TLS), each with a test button that uses the values on the page.
+  - Events, each can be switched off: software update available, applying the configuration failed, changes
+    reverted automatically because they were not kept in time, WAN connection down / up again / new address,
+    an address blocked after failed sign-ins, panel certificate expiring, IP or DNS blocklist downloads failing,
+    disk almost full and CPU temperature high (adjustable thresholds).
+  - Failed applies, automatic rollbacks and blocked sign-ins are reported at once; the rest is checked every 5
+    minutes. The same problem is repeated only after a pause.
+  - The bot token and the mail password are stored on the firewall only (root-only files) and never shown
+    again. Notification settings take effect at once, without Apply.
+
+## 0.12.3 - 2026-11-04
+
+### Added
+- **System > Settings > Logging**:
+  - Firewall log rotation: file size and number of old files kept; current size of the firewall, system, DHCP/DNS
+    and sign-in logs and the free space for logs.
+  - **Remote syslog**: up to two servers (for example a NAS), each with its own choice of logs: system, sign-ins
+    (panel, SSH, VPN), the firewall log (one readable line per packet, tag `filterlog`) and DHCP/DNS. Sent over
+    UDP by the system's syslogd; the local logs stay as they are.
+  - **Send test message** checks that a server receives syslog before anything is applied.
+
+### Changed
+- Rotation of the firewall and DHCP/DNS logs is generated from the settings (the defaults are unchanged).
+- Software updates restart the firewall log and traffic collectors, so they run the new version at once.
 
 ## 0.12.2 - 2026-11-03
 

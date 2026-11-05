@@ -112,3 +112,10 @@ the FreeBSD/pf rewrite that replaced them; the earlier code is kept in the `lega
 ---
 
 © 2026 Kaan Özkan. All rights reserved.
+
+## 📰 Latest from Our Blog
+* 🇹🇷 [pfSense Alternatifi Stratum FW: Yapay Zeka Destekli Yeni Nesil Güvenlik](https://stratumfw.com/tr/blog/pfsense-alternatifi-stratum-fw-mcp/)
+* 🇬🇧 [Stratum FW vs pfSense: The AI-Powered (MCP) Next-Gen Firewall](https://stratumfw.com/blog/stratum-fw-vs-pfsense-mcp/)
+
+## 📄 Changelog
+For a detailed list of changes in every version, please visit our [Changelog Page](https://stratumfw.com/resources/changelog/) or check the [CHANGELOG.md](CHANGELOG.md) file.
