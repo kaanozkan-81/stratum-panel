@@ -2,6 +2,117 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.24.0 - 2026-11-05
+
+### Added
+- **Web Filter** (Firewall > Web Filter) blocks site categories through the firewall's DNS resolver (Unbound RPZ), with different rules per network.
+  - **Policies:** a policy gives one or more networks a set of blocked categories. VPN client networks can be policy networks too, and each network belongs to one policy.
+  - **Categories:** 55 categories in groups (adult content, security threats, ways around the filter, social networks, entertainment, shopping and money, downloads and more), from the UT1 blacklists of Université Toulouse Capitole (CC BY-SA 4.0, updated daily) and the Block List Project. Adult content comes as a compact list and a very large full list, and the policy page estimates the resolver memory the chosen categories need.
+  - **Safe Search:** each policy can force safe results on Google (also google.com.tr and other country domains), Bing and DuckDuckGo, and restricted mode on YouTube.
+  - **Exceptions:** listed sites are never blocked by the web filter and take effect at once, with no Apply. The DNS blocklists still apply to them.
+  - **Check a site:** shows which categories contain a name and which policies block it.
+  - **Blocked report:** blocks per category, site and device for today, 7 or 30 days. It needs Web Activity, whose collector now also counts web filter and DNS blocklist blocks. Only administrators see the report, and viewing it is logged.
+  - **Updates:** category lists update on a schedule (daily by default) and on demand, and a failed download keeps the previous list.
+
+## 0.23.0 - 2026-11-05
+
+### Changed
+- **New dashboard:** every panel can be moved and resized. Customize lets you drag a panel by its title and resize it from its edges or corner on a 12-column grid. Each user has their own layout, saved at once with no Apply, and Reset layout brings back the default.
+- **Dashboard > Add panels** (a full page) lists every panel, to add or remove. Panels:
+  - System, WAN, CPU, Memory, Disk, Temperature, Connections, Blocked
+  - Traffic, Protection, Interfaces, Services, DHCP, VPN connections
+  - Top blocked sources, Top blocked ports, Recent changes
+  - New: Intrusion detection, Gateways (latency, loss, failover), Bandwidth limits (limit and current rate), Backup and Web Activity. Backup and Web Activity are for administrators only, and viewing Web Activity on the dashboard is logged.
+- Panel contents adapt to the panel size: long lists such as VPN connections scroll inside their panel, and the traffic graph fills its panel.
+- **Notifications at the top right of every page:** a bell with the unread count, the latest events in a drop-down, and a short pop-up when a new event arrives. They replace the Alerts panel.
+- **Update check icon** on the dashboard: it spins while checking, a click checks now, and it shows the result.
+- The DHCP and VPN panels are separate. On phones the dashboard shows one column.
+- gridstack 12.6.0 (MIT) ships with the panel. Nothing is loaded from the internet.
+
+## 0.22.0 - 2026-11-05
+
+### Added
+- **Encrypted backups:** System > Backup can encrypt the downloaded backup with a password (AES-256-GCM, key from scrypt). An encrypted backup (.stbk) can also carry the **certificates and secrets** kept outside the configuration: OpenVPN CA and user certificates, WireGuard keys, notification secrets, the SNMP community, MCP tokens and the panel certificate. Restoring it on a new firewall brings back working VPN profiles.
+- Restore asks for the password of an encrypted file and can put the certificates and secrets back. Files are only written to their known places.
+- **Automatic backup to a server:** an encrypted backup is uploaded on a schedule over SFTP (NAS, Linux or Windows OpenSSH server).
+  - The firewall uses its own SSH key, and the server's host key is recorded at the first connection.
+  - Only the newest N backups of this firewall are kept on the server.
+  - Test connection and Back up now buttons, and a last-backup status.
+  - A failed backup is retried at the next hour and reported through Notifications.
+  - It takes effect without Apply. The password stays in a root-only file and is never shown again.
+- The stratum-fw package now depends on py312-cryptography.
+
+## 0.21.1 - 2026-11-05
+
+### Changed
+- Intrusion Detection: each interface is now **Off**, **Watch** or **Block** on its own, as in pfSense. For example, the WAN can only raise alerts while the local networks block.
+- With at least one blocking interface, one Suricata process inspects all watched ports through netmap, so the rules are loaded only once: blocking ports in IPS mode, watch-only ports in tap mode (every packet passes). VLANs on the same port share its mode.
+- The alert list marks a packet as Blocked only on a blocking interface, and names netmap ports after their interfaces.
+- Settings saved with 0.21.0 carry over: "Detect and block" becomes Block on every watched interface.
+
+## 0.21.0 - 2026-11-05
+
+### Added
+- **Inline blocking (IPS)** in Services > Intrusion Detection: the mode "Detect and block" puts Suricata in the path of the packets (netmap with the host stack, as in OPNsense). The rules of the categories marked **Block** drop what they match; all other categories still only alert. Blocked packets show a "Blocked" badge in the alert list.
+- Blocking categories take effect at once without a restart. Switching the mode needs Apply, with the usual automatic rollback if the firewall becomes unreachable.
+- In blocking mode, VLAN and PPPoE interfaces are inspected on their physical port, and hardware offloading (TSO, LRO, checksums) is switched off. If Suricata stops, the ports fall back to normal forwarding (fail open).
+- Apply checks that netmap is available before anything changes.
+
+## 0.20.3 - 2026-11-05
+
+### Changed
+- Web Activity: a click anywhere on a device row opens the sites that device used, and a click on a site row opens the devices that used it. Ctrl / Cmd + click opens the page in a new tab.
+
+## 0.20.2 - 2026-11-05
+
+### Changed
+- Web Activity names VPN clients: an OpenVPN address shows the user ("OpenVPN: name") and a WireGuard address the peer ("WireGuard: name"). Both are kept in the DHCP history too, so a VPN address used by different users over time stays apart.
+- The device count sits next to the title.
+
+## 0.20.1 - 2026-11-05
+
+### Fixed
+- Web Activity recorded nothing: syslogd writes only to log files that already exist, so the DNS query log was never started. Apply and the collector now create the file (root only) before syslogd reloads.
+
+## 0.20.0 - 2026-11-05
+
+### Added
+- **Web Activity** (Diagnostics > Web Activity) shows which device looked up which sites, from the DNS queries the firewall's Unbound resolver answers. Each device, day and name is kept with a count and the first and last time.
+- The Devices tab lists each address with its host name and MAC address, and opens a device page with the sites it used. The Sites tab lists each site with the devices that used it. Both tabs filter by period (today up to a year), network and search text.
+- **DHCP history** records which device (MAC address, host name) held each address and when. It reads the DHCP leases and the ARP table, so devices with a fixed address are included. The history can be exported as CSV.
+- **Send all DNS to the firewall** (optional): pf redirects DNS from the internal networks to the firewall, including queries aimed at 8.8.8.8 and the like. It also blocks DNS over TLS (port 853) and tells Firefox not to use its own DNS over HTTPS.
+- Records are kept for 1 to 730 days (30 by default), in a root-only database on the firewall. The pages are open to administrators only, and every look at the data is written to the system log.
+- The stratum-fw package now depends on py312-sqlite3.
+
+## 0.19.0 - 2026-11-05
+
+### Added
+- **SNMP agent** (System > Settings > SNMP) for monitoring systems such as LibreNMS, Zabbix, PRTG, Observium or Cacti: SNMP v1 / v2c, read-only, with the interfaces and their 64-bit traffic counters (IF-MIB), CPU, memory, disks and processes (HOST-RESOURCES) and pf statistics. It uses FreeBSD's own bsnmpd.
+- It answers only on the addresses of the chosen internal interfaces, never on a WAN, and pf lets queries in only from the allowed addresses. The community is stored root-only and never shown again; nothing can be changed over SNMP.
+- The stratum-fw package now depends on FreeBSD-bsnmp, so updating installs the agent.
+
+## 0.18.0 - 2026-11-05
+
+### Added
+- **Bandwidth limits** (Firewall > Shaper): a download and an upload limit for each internal network, shared by the whole network (for example 255 Mbit/s for the office VLAN) or for each device on its own (for example 20 Mbit/s per guest phone). Decimal values are allowed; an empty field means no limit in that direction.
+- The limits use FreeBSD's dummynet directly from pf (no second firewall). The pipes are loaded before pf at every Apply and by FreeBSD at boot; an Apply that is not kept removes them again.
+
+## 0.17.0 - 2026-11-05
+
+### Added
+- **Interface groups** (Interfaces > Groups): a group of interfaces, for example all VLANs or all WANs, gets its own tab on Firewall > Rules. Its rules apply to every member interface and are evaluated before each interface's own rules, as in pfSense and OPNsense. WAN members keep their reply-to.
+- Groups can be renamed (their rules move with them) and deleted once they have no rules. When an interface is removed, it simply leaves its groups.
+- The MCP tool firewall_rules lists group rules and the interfaces they apply to.
+
+## 0.16.1 - 2026-11-05
+
+### Added
+- **WAN failover** (Interfaces > Gateways, shown with two or more WANs): when the gateway that carries the default route goes down, the default route moves at once to the best gateway that is up (lowest priority number). The preferred gateway takes over again only after it has been online for a set time (60 s by default), so a flapping line does not switch back and forth. The connections of the failed gateway can be closed so they reopen through the new one at once. Every switch is logged and reported.
+- With two or more WANs, answers to connections that come in on a WAN (port forwards, management, pass rules) leave through that same WAN (reply-to), whatever the default route is. Static WANs use their gateway, PPPoE WANs their link. Systems with one WAN keep exactly the same firewall rules.
+
+### Fixed
+- After the update to 0.16.0 the gateway monitor started only with the next Apply or reboot, because the update tool of the previous version did not know it. The panel now starts it when it is enabled but not running.
+
 ## 0.16.0 - 2026-11-05
 
 ### Added
