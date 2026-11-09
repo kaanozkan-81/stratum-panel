@@ -1,18 +1,215 @@
+# Changelog
+
 All notable changes to Stratum FW are listed here, newest first. Stratum FW updates itself from the signed
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.27.1 - 2026-11-07
+
+### Added
+- Import from OPNsense, "Also import OpenVPN": the OpenVPN server is taken over completely, so the profiles
+  already on the users' computers connect unchanged. Tested with a real connection using an OPNsense-style
+  profile.
+  - What is taken over: the certificate authority with its key, the server certificate, the tls-crypt or
+    tls-auth key, every user's certificate, and the VPN users with their OPNsense passwords.
+  - VPN users become VPN-only accounts.
+  - The settings are carried over too: port, protocol, tunnel network, ciphers, digest, DNS, full tunnel and
+    block-outside-dns.
+  - The earlier OpenVPN certificates of this firewall are kept in a separate folder.
+  - A user who already exists here keeps the password set here.
+- OpenVPN users can sign in with password hashes from other systems: bcrypt as PHP writes it (`$2y$`) and
+  argon2id. An argon2id password is stored as bcrypt at the first sign-in.
+- OpenVPN, several addresses for clients: new profiles get one `remote` line per address, tried in order.
+- OpenVPN, Windows clients can be limited to the VPN's DNS servers (`block-outside-dns`).
+- OpenVPN, the "TLS client" check of user certificates can be switched off for certificates made by other
+  systems.
+
+### Fixed
+- OpenVPN with two WANs: a client connecting to the second WAN's address got its answers from the first WAN and
+  could not connect. The server now answers from the address the client used (`multihome`), and pf sends the
+  answers back through the WAN they came in on.
+- OpenVPN profiles check the server's real certificate name instead of a fixed one, which matters with a server
+  certificate taken over from another system.
+
+## 0.27.0 - 2026-11-07
+
+### Added
+- Interfaces > Virtual IPs: extra addresses on an interface, for example more public addresses of a WAN block
+  (/29).
+  - A port forward can choose a virtual IP as its destination address, so each public address can forward to
+    a different server. NAT reflection follows it.
+  - Outbound NAT can translate to a virtual IP.
+  - Inside the interface's own network an address is added as /32, as FreeBSD needs.
+- Interfaces > Routes: static routes to networks behind another router, through a gateway on a directly
+  connected network.
+  - Networks reached through a router on an internal interface are NATed to the internet automatically, like
+    the interface networks.
+- Virtual IPs and routes are not written to rc.conf. `stratum-netextra` keeps the system in line with the
+  applied list: it adds what is missing and removes only what it added itself.
+  - It runs at boot and after every Apply and rollback, also after interface and routing restarts, which drop
+    aliases and routes.
+  - Each entry shows whether it is active on the firewall.
+- Import from OPNsense: IP alias virtual IPs, static routes (gateways resolved by name) and port forwards to a
+  virtual IP are carried over. CARP virtual IPs are listed as not supported.
+
+## 0.26.1 - 2026-11-07
+
+### Fixed
+- Host name and country aliases: the update started by Apply or "Update now" could be skipped without a trace
+  when the 5-minute host name update was running at that moment, so a new country alias stayed empty until the
+  next daily run. Those updates now wait for the running one to finish. Only the 5-minute run still skips when
+  another update is busy.
+
+## 0.26.0 - 2026-11-07
+
+### Added
+- Firewall > Aliases, Host names: an alias of host names such as `update.example.com`, which may also hold
+  addresses and networks.
+  - The firewall resolves the names every 5 minutes through its own DNS, so it sees the same addresses as the
+    clients.
+  - An address stays in the alias for an hour after it was last seen, because CDNs rotate their addresses.
+  - A name that cannot be resolved keeps its last addresses, and the page shows it.
+- Firewall > Aliases, Countries: all address blocks of the chosen countries, picked from a searchable list.
+  Typical use: "only Türkiye may reach this port forward" or "block these countries".
+  - The data comes from the five regional internet registries (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC). It is
+    free and needs no licence key.
+  - It is downloaded weekly. A failed download keeps the previous data.
+- Both alias types are pf tables loaded from a file. Every pf reload reads the last addresses, and updates
+  replace the table while pf runs, without Apply.
+- The alias list shows how many addresses each of these aliases holds and when it was last updated. The
+  "Update now" button refreshes them at once.
+- Import from OPNsense: aliases that contain host names become host name aliases, and GeoIP aliases become
+  country aliases. They are no longer imported empty.
+
+### Fixed
+- The alias page tabs no longer overflow on phones.
+
+## 0.25.1 - 2026-11-07
+
+### Added
+- System > Power:
+  - Restart and power off, with a confirmation. After a restart the page reconnects by itself.
+  - Reset to factory defaults. The reset uses the ports in use now, so a firewall far away comes back
+    reachable: WAN by DHCP, LAN 192.168.1.1/24 with DHCP, panel only from the internal networks.
+  - Reset options: keep the panel users or start over with a new "admin" password; erase certificates, keys
+    and secrets; erase logs and statistics.
+  - The reset is confirmed by typing the host name. It is applied without the rollback timer and the firewall
+    restarts.
+  - Administrators only; every action is logged.
+- Diagnostics > ARP Table:
+  - Every address the firewall knows, with MAC, interface, expiry and name (from DHCP reservations, leases and
+    DNS overrides).
+  - Private (random) MAC addresses of phones and laptops are marked.
+  - An entry can be deleted.
+- Wake-on-LAN, on the ARP Table page: wake a device by MAC address, or with one click from the devices that have
+  a DHCP reservation. Operators may use it.
+- Diagnostics > Packet Capture: capture one interface into a `.pcap` file for Wireshark.
+  - The filter is built from fields (protocol, host or network, port), never free text.
+  - Limits on duration, size and packets; one capture at a time.
+  - The administrator's own panel and SSH traffic is left out by default.
+  - The file is kept for 24 hours at most, in a root-only folder.
+  - Administrators only; start, stop and download are logged.
+
+### Fixed
+- The search boxes of the States and ARP Table pages had no styling.
+
+## 0.25.0 - 2026-11-07
+
+### Added
+- System > Backup > Import from OPNsense: an OPNsense `config.xml` becomes the pending configuration. The import
+  carries over interfaces, VLANs, gateways and the default gateway, interface groups, aliases (nested aliases
+  resolved), firewall rules (current and older rule format), port forwards, outbound NAT, DHCP ranges and
+  reservations (dnsmasq and ISC dhcpd), DNS host and domain overrides, bandwidth limits, host name, domain,
+  time zone and DNS and time servers.
+- Before anything is saved, the import shows a preview:
+  - the network ports of the OPNsense box are assigned to this system's ports, and any port can be left out;
+  - a report lists what was imported, what changed on the way and what could not be imported, with the reason.
+- Port forwards keep their access limits. In OPNsense a port forward is often allowed by separate WAN rules. In
+  Stratum a port forward passes its own traffic, so its source is taken from those WAN rules, and a combined
+  alias is created when several rules allow it. A forward that no rule allowed is imported switched off and
+  never opened to everyone.
+- Aliases that cannot be carried over (URL tables, host names) are imported empty, so block rules that use them
+  block nothing and pass rules that use them allow nothing. They are listed in the report.
+- The import warns when the LAN address changes, and when an imported network contains this firewall's current
+  WAN address (applying would cut the firewall off).
+- The file is only read. It is never stored, and nothing secret appears in the report. Users, certificates,
+  OpenVPN, IPsec, WireGuard and plugins are listed as not imported. The import is administrator-only and
+  logged.
+
+### Fixed
+- Form pages with wide tables no longer scroll sideways on phones.
+
+## 0.24.4 - 2026-11-07
+
+### Added
+- Intrusion Detection: Watch and Block can now be set per interface, as in pfSense. For example, the WAN can
+  only be watched while the local networks block. Mixing the two runs two Suricata engines: one on netmap for
+  the blocking interfaces and one reading copies (pcap) for the watch-only interfaces. Suricata allows one
+  capture method per process. Both engines load the same rules, and each is supervised and restarted on its
+  own. Alerts and statistics of both are shown together, and log rotation and the WAN address update cover
+  both.
+- With two engines the rules are loaded twice, so memory use is about twice as high. Each engine gets smaller
+  memory limits, and the settings page says so. Apply checks both configurations with Suricata before using
+  them.
+
+### Fixed
+- AI assistant (MCP): the intrusion detection tool always reported "detection only". It now names the
+  blocking interfaces and categories.
+
+## 0.24.3 - 2026-11-07
+
+### Fixed
+- Intrusion Detection: changes to the rule categories (on, off, Block) did not reach a running Suricata
+  until it restarted. The live rule reload sent signal 12, which is SIGUSR2 on Linux but SIGSYS on FreeBSD.
+  It now uses SIGUSR2.
+- Intrusion Detection: Block on some interfaces together with Watch on others is refused with a clear
+  message. Suricata does not allow blocking and watch-only ports in one netmap process, so it failed to
+  start and nothing was inspected while the traffic went on.
+- Dashboard: an interface without a cable showed as Up; it now shows No cable.
+
+### Added
+- Intrusion Detection: the ET Open "Policy" category (software, tools and services a network may not
+  allow), off by default.
+
+## 0.24.2 - 2026-11-06
+
+### Fixed
+- Intrusion Detection, blocking mode (IPS): Suricata dropped every connection it had not seen start. These
+  are connections open before it started, and long-lived connections that sat idle longer than its flow
+  timeout, such as the push channels phones keep open. Phones on a blocking network lost their connection
+  and dropped off Wi-Fi. Suricata now picks such connections up (midstream), and on any exception
+  (`exception-policy: ignore`) it lets the traffic through instead of dropping the flow. Only matches of
+  blocking rules are dropped.
+
+## 0.24.1 - 2026-11-05
+
+### Fixed
+- Web Filter: the category lists were not downloaded after the first Apply, so the policies blocked nothing
+  until the next scheduled update. The download now follows the saved configuration, as the DNS blocklists
+  do, and Unbound only reloads the zones it has loaded.
+
 ## 0.24.0 - 2026-11-05
 
 ### Added
-- **Web Filter** (Firewall > Web Filter) blocks site categories through the firewall's DNS resolver (Unbound RPZ), with different rules per network.
-  - **Policies:** a policy gives one or more networks a set of blocked categories. VPN client networks can be policy networks too, and each network belongs to one policy.
-  - **Categories:** 55 categories in groups (adult content, security threats, ways around the filter, social networks, entertainment, shopping and money, downloads and more), from the UT1 blacklists of Université Toulouse Capitole (CC BY-SA 4.0, updated daily) and the Block List Project. Adult content comes as a compact list and a very large full list, and the policy page estimates the resolver memory the chosen categories need.
-  - **Safe Search:** each policy can force safe results on Google (also google.com.tr and other country domains), Bing and DuckDuckGo, and restricted mode on YouTube.
-  - **Exceptions:** listed sites are never blocked by the web filter and take effect at once, with no Apply. The DNS blocklists still apply to them.
+- **Web Filter** (Firewall > Web Filter) blocks site categories through the firewall's DNS resolver (Unbound
+  RPZ), with different rules per network.
+  - **Policies:** a policy gives one or more networks a set of blocked categories. VPN client networks can be
+    policy networks too, and each network belongs to one policy.
+  - **Categories:** 55 categories in groups (adult content, security threats, ways around the filter, social
+    networks, entertainment, shopping and money, downloads and more), from the UT1 blacklists of Université
+    Toulouse Capitole (CC BY-SA 4.0, updated daily) and the Block List Project. Adult content comes as a
+    compact list and a very large full list, and the policy page estimates the resolver memory the chosen
+    categories need.
+  - **Safe Search:** each policy can force safe results on Google (also google.com.tr and other country
+    domains), Bing and DuckDuckGo, and restricted mode on YouTube.
+  - **Exceptions:** listed sites are never blocked by the web filter and take effect at once, with no
+    Apply. The DNS blocklists still apply to them.
   - **Check a site:** shows which categories contain a name and which policies block it.
-  - **Blocked report:** blocks per category, site and device for today, 7 or 30 days. It needs Web Activity, whose collector now also counts web filter and DNS blocklist blocks. Only administrators see the report, and viewing it is logged.
-  - **Updates:** category lists update on a schedule (daily by default) and on demand, and a failed download keeps the previous list.
+  - **Blocked report:** blocks per category, site and device for today, 7 or 30 days. It needs Web Activity,
+    whose collector now also counts web filter and DNS blocklist blocks. Only administrators see the report,
+    and viewing it is logged.
+  - **Updates:** category lists update on a schedule (daily by default) and on demand, and a failed download
+    keeps the previous list.
 
 ## 0.23.0 - 2026-11-05
 

@@ -1,121 +1,83 @@
 # Stratum FW
 
-A self-hosted firewall and gateway appliance built on **FreeBSD 15.1** and **pf**, managed from a modern web
-panel, in the spirit of pfSense and OPNsense. One configuration file, a safe apply with automatic rollback, and
-signed updates with ZFS boot environments.
+A self-hosted firewall and gateway appliance built on **FreeBSD 15.1-RELEASE** and **pf**, managed from a modern asynchronous web panel, in the spirit of pfSense and OPNsense. One declarative configuration file, a 60-second **Safe-Apply** with automatic rollback, and signed updates with atomic **ZFS Boot Environments**.
 
-> **Repository status:** private. Current version **0.12.2** (November 2026). Release history:
-> [CHANGELOG.md](CHANGELOG.md). Website and downloads: [stratumfw.com](https://stratumfw.com).
+* **Current release:** `0.27.1` (November 2026) — [Release History (CHANGELOG.md)](CHANGELOG.md)
+* **Live Browser Demo (FreeBSD 15.1 VM):** [https://demo.stratumfw.com](https://demo.stratumfw.com) *(Login: `demo` / `Stratum2026` — auto-filled)*
+* **Official Website & Downloads (`.iso` VGA & `.img` Serial):** [https://stratumfw.com](https://stratumfw.com) · [Download v0.27.1](https://stratumfw.com/download/)
 
-![Dashboard](docs/screenshots/dashboard.png)
+## Try It Live in Your Browser
 
----
+You can explore the real Stratum FW `v0.27.1` management interface running on an isolated FreeBSD 15.1 virtual appliance without downloading or installing anything:
+
+* **Launch Live Demo:** [https://demo.stratumfw.com](https://demo.stratumfw.com) ([Demo Overview](https://stratumfw.com/demo/))
+* **Credentials:** Username `demo` · Password `Stratum2026` *(automatically filled on the sign-in screen; runs in a read-only Copy-on-Write sandbox)*
 
 ## Highlights
 
-- **Safe apply.** Every change is validated, pre-checked (`pfctl -n`, `nginx -t`, `sshd -t`, `unbound-checkconf`,
-  `dnsmasq --test`) and applied with an automatic rollback unless it is confirmed in time. Settings that would
-  lock out the administrator are refused when saving.
-- **One source of truth.** All settings live in one JSON file; pf, dnsmasq, Unbound, mpd5, OpenVPN, WireGuard,
-  nginx, sshd and rc.conf are generated from it.
-- **Signed updates.** Signed package repository, offline update files (`.sfu`), a backup and a new ZFS boot
-  environment before every update; the previous version can be booted at any time.
-- **No modal dialogs, no client-side build.** Server-rendered pages with small vanilla JavaScript modules, dark
-  and light themes, usable on a phone.
-- **Bilingual Interface (EN/TR).** Both the management panel and the official website fully support English and Turkish, with seamless language switching.
+* **Safe Apply.** Every change is validated, pre-checked (`pfctl -n`, `nginx -t`, `sshd -t`, `unbound-checkconf`, `dnsmasq --test`) and applied with a 60-second automatic rollback unless confirmed in time. Settings that would lock out the administrator are refused when saving.
+* **One Source of Truth.** All settings live in a single declarative JSON file; `pf`, `dnsmasq`, `Unbound`, `Suricata`, `mpd5`, `OpenVPN`, `WireGuard`, `nginx`, `sshd`, `stratum-netextra`, and `rc.conf` are generated cleanly from it.
+* **Drop-In OPNsense & OpenVPN Migration (`v0.25.0` – `v0.27.1`).** Import an OPNsense `config.xml` with interactive interface mapping and pre-flight reporting. Optionally take over the entire **OpenVPN server** (CA, server & user certificates, `tls-crypt`/`tls-auth` keys, tunnel settings, and user password hashes including PHP `$2y$` bcrypt and `argon2id`) so existing client `.ovpn` profiles connect unchanged.
+* **Signed Updates with ZFS Boot Environments.** Online signed repository (`update.stratumfw.com`) and offline update packages (`.sfu`) automatically snapshot the system into a new ZFS boot environment before every upgrade; the previous version can be booted again at any time.
+* **Fast, Clean Web UI.** Server-rendered pages with lightweight vanilla JavaScript modules, dark and light themes, no heavy client-side build step, and full **English & Turkish** (`EN` / `TR`) localization.
 
 ## Features
 
-### Interfaces
-- Interface assignments (WAN, LAN, OPT; OPT as WAN or LAN type), static / DHCP / PPPoE, gateway, MTU.
-- 802.1Q VLANs, assignable like physical ports. An interface's description is shown as its name everywhere.
+### Interfaces, Virtual IPs & Routing
+* **Interface Assignments:** `WAN`, `LAN`, `OPT1..N` (`OPT` as WAN or LAN type), static IPv4, DHCP, and PPPoE (`mpd5`), custom MTU, and 802.1Q VLANs.
+* **Multi-WAN & Gateway Monitoring:** Gateway health monitoring, automatic failover, and policy-based routing.
+* **Virtual IPs (`v0.27.0`):** Assign additional public or internal addresses (such as a routed `/29` WAN block) to any interface for Port Forwards (with NAT reflection) and Outbound NAT.
+* **Static Routes (`v0.27.0`):** Route internal subnets behind downstream routers with automatic outbound NAT inclusion. Both Virtual IPs and static routes are synchronized cleanly without polluting `rc.conf` via `stratum-netextra`.
 
-### Firewall and NAT
-- Rules per interface with system rules shown, hit counters, drag-and-drop order, on/off switch.
-- Aliases for hosts, networks and ports.
-- Port forwards with automatic pass rules, outbound NAT (automatic, hybrid, manual), **NAT reflection**.
-- Anti-lockout rule, bogon and private network blocking, IPv6 safety baseline (all IPv6 dropped until IPv6
-  support arrives).
-- **IP blocklists** (pf tables): 63 maintained IPv4 feeds derived from pfBlockerNG, own allow and block lists,
-  hourly updates without Apply, "check an address".
-- **DNS blocklists** (Unbound RPZ): pfBlockerNG and HaGeZi catalogues, own lists, nightly updates.
+### Firewall, NAT & Dynamic Aliases
+* **Stateful `pf` Rules:** Per-interface rules with visible system rules, live packet/byte hit counters, drag-and-drop ordering, and quick enable/disable toggles.
+* **Port Forwards & Outbound NAT:** Automatic associated filter rules, NAT reflection, and Automatic / Hybrid / Manual outbound NAT modes.
+* **Dynamic Hostname & Country (GeoIP) Aliases (`v0.26.0` – `v0.26.1`):**
+  * **Hostname Aliases:** Resolved every 5 minutes via the local DNS resolver and retained for 60 minutes to handle CDN IP rotation smoothly.
+  * **License-Free Country (GeoIP) Aliases:** Weekly country IPv4 blocks sourced directly from all five Regional Internet Registries (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC) — no external API key required.
+* **IP & DNS Blocklists:** 63 maintained IPv4 threat feeds loaded into `pf` tables (hourly live updates without reload) plus Unbound RPZ DNSBL sinkholing (pfBlockerNG & HaGeZi catalogs).
 
-### Services
-- DHCP server (dnsmasq) with static mappings and leases.
-- DNS resolver: dnsmasq or Unbound (DNSSEC, forwarder or full recursion), host and domain overrides.
-- NTP client and optional time service for internal networks.
+### Intrusion Detection & Prevention (Suricata IPS/IDS)
+* **Per-Interface Dual-Engine Modes (`v0.24.3` – `v0.24.4`):** Independently select **Watch** (`pcap` IDS) or **Block** (`netmap` inline IPS) per interface. When mixed across interfaces, Stratum supervises separate `netmap` and `pcap` Suricata processes and reloads rule categories live via FreeBSD `SIGUSR2`.
 
-### VPN
-- **OpenVPN** remote access: built-in CA (EC keys, CRL, tls-crypt), certificate + password login, per-user
-  profiles, fixed client addresses, access per LAN/VLAN, advanced settings (UDP/TCP, ciphers, TLS, DNS, MTU).
-- **WireGuard** (FreeBSD kernel `if_wg`): peers with keys generated on the firewall, QR codes and `.conf`
-  files, access per LAN/VLAN, live status; adding a peer does not disconnect the others.
+### VPN (WireGuard & OpenVPN)
+* **OpenVPN Remote Access:** Built-in CA (EC keys, CRL, `tls-crypt`), certificate + password authentication (`bcrypt` & `argon2id`), multi-WAN `multihome` reply routing, ordered multi-remote client profiles, `block-outside-dns` for Windows clients, and full OPNsense server takeover.
+* **WireGuard (`if_wg`):** Kernel-level WireGuard with on-box key generation, downloadable `.conf` profiles and QR codes, per-VLAN access control, and zero-downtime peer updates.
 
-### System
-- **Settings** with tabs: General (hostname, domain, time zone, sign-in notice), Admin Access (panel port,
-  management only from selected interfaces, WAN access with source addresses, sign-in protection, SSH and
-  keys), Firewall & NAT (block policy, logging, state table, timeouts, SYN cookies, normalisation, NAT reflection,
-  static port).
-- Users and roles (administrator, operator, read-only), VPN-only accounts.
-- Certificates: panel TLS certificate (view, upload your own, new self-signed, restore previous, expiry alert).
-- Backup and restore with configuration history and differences.
-- Software updates online or offline, with progress and rollback to the previous boot environment.
-
-### Diagnostics
-- Live firewall log with rule names, system logs, ping / traceroute / DNS lookup, pf state table, traffic
-  graphs (1 hour, 24 hours, 30 days), dashboard with alerts.
-
-### Console
-- Console menu and first-boot setup wizard (interfaces, addresses, WAN access, time zone, administrator), reset
-  of management access. Installer ISO in VGA and serial console variants (GPT, BIOS and UEFI, ZFS, offline).
-
-## Screenshots
-
-| | |
-|---|---|
-| ![Firewall rules](docs/screenshots/pf-rules.png) | ![WireGuard](docs/screenshots/wireguard.png) |
-| ![Blocklists](docs/screenshots/blocklists.png) | ![Settings > Firewall & NAT](docs/screenshots/settings-firewall.png) |
+### Diagnostics & System Management
+* **Packet Capture (`v0.25.1`):** Capture interface traffic with protocol, host/network, and port filters into a downloadable `.pcap` file for Wireshark (automatically excluding your admin session).
+* **ARP Table & Wake-on-LAN (`v0.25.1`):** Live neighbor table with DHCP/DNS hostname resolution, randomized mobile MAC detection, and one-click Wake-on-LAN.
+* **Remote-Safe Power & Factory Reset (`v0.25.1`):** Reboot, halt, or reset to factory defaults while preserving active physical interface assignments so remote appliances stay reachable.
+* **Role-Based Access Control (RBAC):** Administrator, Operator, Read-Only, and VPN-only user accounts, plus Let's Encrypt ACME & custom TLS certificate management.
 
 ## Architecture
 
-```
- Browser ──HTTPS──> nginx ──> uvicorn / FastAPI panel ──> config.json (+ users, keys, certificates)
-                                                              │
-                                   stratum-config apply ◄─────┘  validate · pre-check · snapshot
-                                          │                         apply · confirm / automatic rollback
-            ┌─────────────┬───────────────┼───────────────┬──────────────┬──────────────┐
-          pf.conf    dnsmasq / Unbound   mpd5 (PPPoE)   OpenVPN / wg0   nginx / sshd    rc.conf
+```text
+Browser ──HTTPS──> nginx ──> uvicorn / FastAPI panel ──> config.json (+ users, keys, certificates)
+                                                               │
+                                         stratum-config apply ◄┘
+                                    validate · pre-check · snapshot
+                                    apply · confirm / 60s auto-rollback
+      ┌──────────────┬───────────────┬───────────────┬──────────────┬──────────────────┐
+   pf.conf   dnsmasq / Unbound   Suricata    OpenVPN / wg0    nginx / sshd   stratum-netextra
 ```
 
 | Layer | Component |
-|---|---|
-| Operating system | FreeBSD 15.1 (amd64), ZFS, boot environments |
-| Packet filter | pf (tables for blocklists, labels for counters) |
-| Web panel | Python 3.12, FastAPI, Jinja2, Uvicorn behind nginx |
-| Frontend | Server-rendered templates, vanilla JavaScript, no build step |
-| Services | dnsmasq, Unbound, mpd5, OpenVPN, WireGuard (base system), ntpd |
-| Packaging | FreeBSD `pkg`, signed repository, offline `.sfu` files |
-| Command line | `stratum-config`, `stratum-menu`, `stratum-update`, `stratum-cert`, `stratum-ipbl`, `stratum-dnsbl` |
+| :--- | :--- |
+| **Operating System** | FreeBSD 15.1-RELEASE (`amd64`), ZFS root, atomic Boot Environments |
+| **Packet Filter & IPS** | `pf` (stateful inspection, ALTQ shaping, live tables) + dual-engine Suricata (`netmap` / `pcap`) |
+| **Web Panel** | Python 3.12, FastAPI, Jinja2, Uvicorn behind Nginx |
+| **Frontend** | Server-rendered templates, modular vanilla JavaScript, dark/light theme, EN & TR |
+| **Network Services** | `dnsmasq`, `Unbound` (DNSSEC & RPZ DNSBL), `mpd5` (PPPoE), `OpenVPN`, `WireGuard` (`if_wg`), `ntpd` |
+| **Installers & Updates** | VGA `.iso` & Headless Serial `.img` installers, signed online repo & offline `.sfu` update packages |
+| **CLI Utilities** | `stratum-config`, `stratum-menu`, `stratum-update`, `stratum-netextra`, `stratum-cert`, `stratum-ipbl`, `stratum-dnsbl` |
 
-## Roadmap
+## Latest Articles & Release Notes
 
-- **0.12.3** Settings > Logging (retention, remote syslog) and Notifications (Telegram, e-mail).
-- **0.12.4** Settings > Networking and Tunables (offloads, sysctl).
-- Let's Encrypt certificates, routing (static routes, gateway monitoring, multi-WAN), dashboard redesign.
-- IPv6 in phases: WAN with DHCPv6 prefix delegation, LAN and rules, services, VPNs.
-
-## History
-
-Earlier prototypes of this project ("Stratum Gateway") ran on Debian with nftables and systemd. Stratum FW is
-the FreeBSD/pf rewrite that replaced them; the earlier code is kept in the `legacy-gateway` branch.
-
----
+* 🇬🇧 [Stratum Firewall v0.27.1: Seamless OPNsense & OpenVPN Migration, Virtual IPs, Country Aliases, and Diagnostics](https://stratumfw.com/blog/stratum-firewall-v0-27-1-opnsense-migration/)
+* 🇹🇷 [Stratum Firewall v0.27.1: Kesintisiz OPNsense ve OpenVPN Göçü, Sanal IP'ler, Ülke Takma Adları ve Tanılama Araçları](https://stratumfw.com/tr/blog/stratum-firewall-v0-27-1-opnsense-migration/)
+* 🇬🇧 [Stratum FW vs pfSense: The AI-Powered (MCP) Next-Gen Firewall](https://stratumfw.com/blog/pfsense-alternative-stratum-fw/)
+* 🇹🇷 [pfSense Alternatifi Stratum FW: Yapay Zeka Destekli Yeni Nesil Güvenlik](https://stratumfw.com/tr/blog/pfsense-alternatifi-stratum-fw/)
+* 📄 Full release history: [Online Changelog](https://stratumfw.com/resources/changelog/) or [CHANGELOG.md](CHANGELOG.md)
 
 © 2026 Kaan Özkan. All rights reserved.
-
-## 📰 Latest from Our Blog
-* 🇹🇷 [pfSense Alternatifi Stratum FW: Yapay Zeka Destekli Yeni Nesil Güvenlik](https://stratumfw.com/tr/blog/pfsense-alternatifi-stratum-fw-mcp/)
-* 🇬🇧 [Stratum FW vs pfSense: The AI-Powered (MCP) Next-Gen Firewall](https://stratumfw.com/blog/stratum-fw-vs-pfsense-mcp/)
-
-## 📄 Changelog
-For a detailed list of changes in every version, please visit our [Changelog Page](https://stratumfw.com/resources/changelog/) or check the [CHANGELOG.md](CHANGELOG.md) file.
