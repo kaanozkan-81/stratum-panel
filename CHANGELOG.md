@@ -4,6 +4,39 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.30.3 - 2026-11-11
+
+### Fixed
+- Bandwidth limits (Firewall > Shaper) on systems installed from the image: `dnctl` and the dummynet start-up
+  scripts (FreeBSD-ipfw) were missing. pf still sent the limited networks' traffic to dummynet, and that traffic was
+  dropped - only DHCP still worked on those networks. FreeBSD-ipfw is now part of the image and a dependency of the
+  package, so an update installs it.
+- An apply with bandwidth limits is refused, with the reason, when `dnctl` or the dummynet module is missing, instead
+  of loading pf rules that drop the traffic.
+
+## 0.30.2 - 2026-11-11
+
+### Added
+- Import from OPNsense: the Unbound DNS blocklists are carried over (the older format and the newer one with several
+  blocklists). They replace the DNS blocklist settings of this firewall.
+  - Lists with the same source in the catalogue are switched on (by URL, and Steven Black and AdGuard by their
+    OPNsense code); other https:// lists become custom lists.
+  - The allow list, the block list and the wildcard domains are carried over.
+  - OPNsense list codes without the same source here, plain http lists and patterns are listed in the report.
+  - A blocklist that OPNsense used only for some networks is noted: Stratum's DNS blocklists apply to every network.
+
+### Fixed
+- Import from OPNsense: DNS blocklists in the newer OPNsense format were neither imported nor reported.
+
+## 0.30.1 - 2026-11-11
+
+### Changed
+- DHCP: a range may now contain the interface address (and the gateway given to the clients), as in OPNsense; those
+  addresses are never handed out. The range is written as two pools around them, so no part of it is lost. The
+  dashboard counts the pool size without them.
+- Import from OPNsense: such a range is kept whole instead of being cut to its larger part; a range that starts on
+  the network address (or ends on the broadcast address) is moved off it.
+
 ## 0.30.0 - 2026-11-11
 
 ### Added
