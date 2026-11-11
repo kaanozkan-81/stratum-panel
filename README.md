@@ -2,7 +2,7 @@
 
 A self-hosted firewall and gateway appliance built on **FreeBSD 15.1-RELEASE** and **pf**, managed from a modern asynchronous web panel, in the spirit of pfSense and OPNsense. One declarative configuration file, a 60-second **Safe-Apply** with automatic rollback, and signed updates with atomic **ZFS Boot Environments**.
 
-* **Current release:** `0.27.1` (November 2026) — [Release History (CHANGELOG.md)](CHANGELOG.md)
+* **Current release:** `0.28.3` (November 2026) — [Release History (CHANGELOG.md)](CHANGELOG.md)
 * **Live Browser Demo (FreeBSD 15.1 VM):** [https://demo.stratumfw.com](https://demo.stratumfw.com) *(Login: `demo` / `Stratum2026` — auto-filled)*
 * **Official Website & Downloads (`.iso` VGA & `.img` Serial):** [https://stratumfw.com](https://stratumfw.com) · [Download v0.27.1](https://stratumfw.com/download/)
 

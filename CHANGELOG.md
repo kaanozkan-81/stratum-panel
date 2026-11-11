@@ -4,6 +4,82 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.28.3 - 2026-11-11
+
+### Fixed
+- Blocklist report: blocked DNS queries were not counted with Unbound 1.26, which logs the matching rule
+  (`*.example.com.`) and the action `rpz-nxdomain` before the queried name. The queried name is now read
+  correctly. After the update, the DNS log is read once more from the start, so the blocks of the last days
+  appear; IP blocks are not counted twice.
+- Web Activity: the blocked lookups per device were not counted for the same reason.
+- Only blocking actions count as blocks; an allowed name (`rpz-passthru`) is not a block.
+
+## 0.28.2 - 2026-11-11
+
+### Added
+- Firewall > Blocklists > Blocked: a report of what the blocklists blocked, similar to pfBlockerNG's reports.
+  - It covers the DNS blocklists, the Web Filter and the IP blocklists.
+  - It shows how many DNS queries and IP packets were blocked (inbound and outbound) and a chart of blocks per
+    hour or day.
+  - It shows which list did the blocking, the most blocked domains and addresses, and the devices with the most
+    blocks.
+  - Every blocked query and packet can be searched and filtered by type, list, domain, address or device.
+  - Periods: the last hour, 24 hours or 7 days. Events are kept for 7 days.
+  - Administrators only; every view is logged, as with Web Activity. The report can be cleared.
+- Dashboard panel "Blocklists": DNS and IP blocks of the last 24 hours and the counts per list. Administrators
+  also see the most blocked domains and addresses. Add it from Dashboard > Panels.
+- The report is collected every minute from Unbound's log and the firewall log. Each block is matched to the
+  list that contains the domain or address, starting with your own block list.
+
+### Changed
+- Unbound now logs blocked queries to its own file whenever a DNS blocklist or the Web Filter is on, not only
+  with Web Activity. Without Web Activity, only the blocked queries are written there. After updating, this takes
+  effect with the next Apply.
+- IP blocks are counted only while "Log blocked packets" is on for the IP blocklists (the default).
+
+## 0.28.1 - 2026-11-11
+
+### Added
+- Services > Service Status: every service of the firewall in one list, with its status (running, stopped, switched
+  off), how long it has been running, memory use and process ID. Administrators can start, stop and restart
+  services from here.
+  - Stopping asks for a second click. A stopped service stays stopped until it is started again, the next Apply
+    that changes it, or a reboot.
+  - A service switched off in its settings cannot be started here; its settings page is linked instead.
+  - The packet filter, web server, web panel, SSH, system log and scheduler can only be restarted. For the packet
+    filter, a restart reloads the rules and fills the IP blocklist table again.
+  - Other users can see the list but cannot change anything.
+
+## 0.28.0 - 2026-11-11
+
+### Added
+- Notifications (the bell at the top right): each user can mark one notification or all of them as read, remove
+  one, or clear the list. These are personal: other users' lists and the event history stay as they are. A newer
+  event appears again after clearing.
+- After a change is saved, an "Apply changes" button appears next to the page's Save button, as in OPNsense and
+  pfSense. It only appears when the configuration really changed, not after actions such as Wake-on-LAN or a
+  packet capture.
+
+### Changed
+- The bar with Apply changes / Keep changes stays visible under the top bar while the page scrolls, and lights up
+  briefly after a save. On narrow screens it stays at the top of the page.
+- Opening the notification list no longer marks everything as read; use "Mark all read" or click a notification.
+
+## 0.27.2 - 2026-11-11
+
+### Added
+- Firewall rules, policy routing: a pass rule on an internal interface (or a group of internal interfaces) can
+  send its traffic through a chosen WAN, for example a guest network over the second provider.
+  - Works with WANs that have a static gateway or PPPoE.
+  - Traffic of the rule to your own networks (internal and VPN networks, routed networks) and to the firewall
+    itself keeps the normal routing, so local access is not sent to the internet provider.
+  - If the gateway is down: the traffic uses the default route (failover included) until the gateway is back,
+    or, if chosen, stays on that gateway. The gateway monitor switches the rules within seconds; open
+    connections stay.
+  - The rule list shows the gateway of each rule.
+- Import from OPNsense: rule gateways are carried over to the matching WAN. Gateway groups and gateways on WAN
+  rules are reported and use the default route.
+
 ## 0.27.1 - 2026-11-07
 
 ### Added
