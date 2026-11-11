@@ -2,7 +2,7 @@
 
 A self-hosted firewall and gateway appliance built on **FreeBSD 15.1-RELEASE** and **pf**, managed from a modern asynchronous web panel, in the spirit of pfSense and OPNsense. One declarative configuration file, a 60-second **Safe-Apply** with automatic rollback, and signed updates with atomic **ZFS Boot Environments**.
 
-* **Current release:** `0.29.0` (November 2026) — [Release History (CHANGELOG.md)](CHANGELOG.md)
+* **Current release:** `0.30.0` (November 2026) — [Release History (CHANGELOG.md)](CHANGELOG.md)
 * **Live Browser Demo (FreeBSD 15.1 VM):** [https://demo.stratumfw.com](https://demo.stratumfw.com) *(Login: `demo` / `Stratum2026` — auto-filled)*
 * **Official Website & Downloads (`.iso` VGA & `.img` Serial):** [https://stratumfw.com](https://stratumfw.com) · [Download Installers](https://stratumfw.com/download/)
 
@@ -17,7 +17,7 @@ You can explore the real Stratum FW management interface running on an isolated 
 
 * **Safe Apply & Sticky Workflow (`v0.28.0`).** Every change is validated, pre-checked (`pfctl -n`, `nginx -t`, `sshd -t`, `unbound-checkconf`, `dnsmasq --test`) and applied with a 60-second automatic rollback unless confirmed in time. Saving a real configuration change surfaces an inline **Apply changes** button beside Save and keeps the confirmation banner visible while scrolling.
 * **One Source of Truth.** All settings live in a single declarative JSON file; `pf`, `dnsmasq`, `Unbound`, `Suricata`, `mpd5`, `OpenVPN`, `WireGuard`, `nginx`, `sshd`, `stratum-netextra`, and `rc.conf` are generated cleanly from it.
-* **Unified Blocklist Reports (`v0.28.2` – `v0.29.0`).** pfBlockerNG-style reporting across DNSBL, category Web Filter, and inbound/outbound IP blocklists (`Firewall > Blocklists > Blocked` + Dashboard widget) with hourly/daily charts, list attribution, top blocked domains/IPs, per-device breakdowns, and full Unbound 1.26 RPZ compatibility.
+* **Unified Blocklist Reports (`v0.28.2` – `v0.30.0`).** pfBlockerNG-style reporting across DNSBL, category Web Filter, and inbound/outbound IP blocklists (`Firewall > Blocklists > Blocked` + Dashboard widget) with hourly/daily charts, list attribution, top blocked domains/IPs, per-device breakdowns, and full Unbound 1.26 RPZ compatibility.
 * **Drop-In OPNsense & OpenVPN Migration (`v0.25.0` – `v0.27.2`).** Import an OPNsense `config.xml` with interactive interface mapping, rule-gateway Policy Routing translation, and optional complete **OpenVPN server takeover** (CA, certs, `tls-crypt`/`tls-auth`, and `$2y$` bcrypt / `argon2id` password hashes) so existing client `.ovpn` profiles connect unchanged.
 * **Signed Updates with ZFS Boot Environments.** Online signed repository (`update.stratumfw.com`) and offline update packages (`.sfu`) automatically snapshot the system into a new ZFS boot environment before every upgrade; the previous version can be booted again at any time.
 * **Fast, Clean Web UI.** Server-rendered pages with lightweight vanilla JavaScript modules, customizable 12-column drag-and-drop dashboard (`gridstack`), per-user notification queues, dark and light themes, and full **English & Turkish** (`EN` / `TR`) localization.
@@ -32,7 +32,7 @@ You can explore the real Stratum FW management interface running on an isolated 
 ### Firewall, NAT, Aliases & Blocklists
 * **Stateful `pf` Rules & Dummynet Shaper:** Per-interface and group rules with visible system rules, live packet/byte hit counters, drag-and-drop ordering, and shared or per-device download/upload bandwidth limits (`Firewall > Shaper`).
 * **Dynamic Hostname & Country (GeoIP) Aliases (`v0.26.0` – `v0.26.1`):** 5-minute local DNS hostname resolution (with 60-minute CDN IP retention) and license-free weekly Country IPv4 blocks sourced directly from all five RIRs (ARIN, RIPE NCC, APNIC, LACNIC, AFRINIC).
-* **IP Blocklists, DNSBL & Category Web Filter (`v0.24.0`, `v0.28.2` – `v0.29.0`):** 63 maintained IPv4 threat feeds in live `pf` tables, Unbound RPZ DNS blocklists (pfBlockerNG & HaGeZi), 55-category per-network Web Filter with Safe Search enforcement, and unified 7-day block reporting.
+* **IP Blocklists, DNSBL & Category Web Filter (`v0.24.0`, `v0.28.2` – `v0.30.0`):** 63 maintained IPv4 threat feeds in live `pf` tables, Unbound RPZ DNS blocklists (pfBlockerNG & HaGeZi), 55-category per-network Web Filter with Safe Search enforcement, and unified 7-day block reporting.
 
 ### Intrusion Detection & Prevention (Suricata IPS/IDS)
 * **Per-Interface Dual-Engine Modes (`v0.24.3` – `v0.24.4`):** Independently select **Watch** (`pcap` IDS) or **Block** (`netmap` inline IPS) per interface. When combined, Stratum supervises separate `netmap` and `pcap` Suricata processes and reloads rule categories live via FreeBSD `SIGUSR2`.
@@ -71,8 +71,8 @@ Browser ──HTTPS──> nginx ──> uvicorn / FastAPI panel ──> config.
 
 ## Latest Articles & Release Notes
 
-* 🇬🇧 [Stratum Firewall v0.29.0: Unified Blocklist Reports, Multi-WAN Policy Routing, and Service Control](https://stratumfw.com/blog/stratum-firewall-v0-28-3-blocklist-reports-policy-routing/)
-* 🇹🇷 [Stratum Firewall v0.29.0: Engelleme Listesi Raporları, Politika Tabanlı Yönlendirme ve Servis Yönetimi](https://stratumfw.com/tr/blog/stratum-firewall-v0-28-3-blocklist-reports-policy-routing/)
+* 🇬🇧 [Stratum Firewall v0.30.0: Unified Blocklist Reports, Multi-WAN Policy Routing, and Service Control](https://stratumfw.com/blog/stratum-firewall-v0-28-3-blocklist-reports-policy-routing/)
+* 🇹🇷 [Stratum Firewall v0.30.0: Engelleme Listesi Raporları, Politika Tabanlı Yönlendirme ve Servis Yönetimi](https://stratumfw.com/tr/blog/stratum-firewall-v0-28-3-blocklist-reports-policy-routing/)
 * 🇬🇧 [Stratum Firewall v0.27.1: Seamless OPNsense & OpenVPN Migration, Virtual IPs, Country Aliases, and Diagnostics](https://stratumfw.com/blog/stratum-firewall-v0-27-1-opnsense-migration/)
 * 🇹🇷 [Stratum Firewall v0.27.1: Kesintisiz OPNsense ve OpenVPN Göçü, Sanal IP'ler, Ülke Takma Adları ve Tanılama Araçları](https://stratumfw.com/tr/blog/stratum-firewall-v0-27-1-opnsense-migration/)
 * 📄 Full release history: [Online Changelog](https://stratumfw.com/resources/changelog/) or [CHANGELOG.md](CHANGELOG.md)

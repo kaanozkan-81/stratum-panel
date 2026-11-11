@@ -4,6 +4,51 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.30.0 - 2026-11-11
+
+### Added
+- Two-factor sign-in (TOTP) under My Account: after the password, the panel asks for the 6-digit code of an
+  authenticator app (Google Authenticator, Microsoft Authenticator, 1Password, Bitwarden, ...).
+  - Set up with a QR code or by typing the key. The QR code is drawn in the browser from a bundled library;
+    the key never leaves the firewall, and it is not shown again after the setup.
+  - Each code works only once; a clock difference of 30 seconds either way is accepted.
+  - 10 one-time recovery codes for a lost phone, shown once; new ones can be created at any time.
+    Signing in with a recovery code raises a notification.
+  - Switching two-factor sign-in on ends the user's other sessions.
+  - Wrong codes count towards the sign-in protection; the code page expires after 5 minutes.
+- Users: a 2FA badge in the list, and administrators can switch off a user's two-factor sign-in (lost phone).
+- Console menu: the password reset also offers to switch off two-factor sign-in.
+
+## 0.29.2 - 2026-11-11
+
+### Added
+- Services > DNS Resolver > Force DNS through the firewall: the DNS queries of chosen internal networks reach the
+  firewall's resolver whatever DNS server a device asks, so the DNS blocklists and the Web Filter cannot be
+  bypassed. DNS over TLS is blocked on those networks.
+  - An exception alias leaves some servers reachable directly, for example the domain controllers of an
+    Active Directory domain.
+  - Independent of Web Activity: nothing is recorded.
+- Import from OPNsense:
+  - A port forward that sends the DNS of internal networks to the firewall becomes Force DNS on those networks,
+    with its negated destination alias as the exception.
+  - URL table aliases that download a list of the IP blocklist catalogue (for example CINS Army or
+    blocklist.de, also under an older host name) switch that IP blocklist on, inbound and outbound, instead of
+    being imported empty.
+
+## 0.29.1 - 2026-11-11
+
+### Added
+- DHCP on an additional WAN: a second (or third) internet connection can now get its address by DHCP, for example
+  from a cable or 4G/5G modem.
+  - An additional DHCP WAN never takes the default route or the DNS servers by itself; which WAN carries the
+    default route stays the gateway monitor's decision (failover, Interfaces > Gateways).
+  - The gateway of its lease is used for failover, for answers to connections that come in on it (reply-to) and
+    for policy routing. When the provider hands out another gateway, the firewall rules follow within seconds,
+    without an Apply.
+- Policy routing: a DHCP WAN can be chosen as the gateway of a rule. Until it has a lease, the rule uses the
+  normal routing.
+- Import from OPNsense: a DHCP WAN2 is imported without a warning.
+
 ## 0.29.0 - 2026-11-11
 
 ### Added
