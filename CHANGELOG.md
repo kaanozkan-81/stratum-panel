@@ -4,6 +4,48 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.31.1 - 2026-11-13
+
+### Added
+- NAT > Port Forward: **All / Default / Custom** views. Default entries are the redirects Stratum writes itself
+  (Force DNS, with its exception); custom entries are your port forwards.
+- NAT > Port Forward and NAT > Outbound (the manual rules): **separators** and **move up / move down** arrows, as on
+  Firewall > Rules.
+
+### Changed
+- NAT > Outbound: the sections are named "Custom rules (manual)" and "Default rules (automatic)".
+- Firewall > Rules and NAT: long descriptions wrap, so the actions column stays in view.
+
+## 0.31.0 - 2026-11-13
+
+### Added
+- Firewall > Rules: **All rules / Default / Custom** views. Default rules are the ones Stratum generates from other
+  settings (anti-lockout, DHCP, management access, the default deny); custom rules are your own. The last view
+  chosen is remembered in the browser.
+- Firewall > Rules: **separators**, as in pfSense - named, coloured dividers to group rules ("QR print",
+  "Elka automation"). Add, rename, recolour, move and delete them in the list. They only arrange the list: pf.conf
+  stays the same.
+- Firewall > Rules: **move up / move down** arrows on every rule and separator, next to the existing drag handle.
+  A rule moved past a separator joins the group above or below it.
+
+### Changed
+- Deleting a rule keeps the separators below it above the same rules. Renaming an interface group carries its
+  separators; deleting the group removes them. An OPNsense import starts with no separators.
+
+## 0.30.5 - 2026-11-13
+
+### Fixed
+- OpenVPN: a profile downloaded while several external addresses were set ("a, b") had them all on one `remote`
+  line, which clients cannot resolve, so the profile did not connect. Each address now gets its own `remote` line,
+  tried in order.
+
+## 0.30.4 - 2026-11-12
+
+### Security
+- The panel's session cookie is now marked `Secure`: browsers send it over HTTPS only. Before, opening the panel
+  with `http://` sent the cookie unencrypted to port 80 before the redirect to HTTPS, where someone on the same
+  network could read it.
+
 ## 0.30.3 - 2026-11-11
 
 ### Fixed
