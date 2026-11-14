@@ -4,6 +4,49 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.31.6 - 2026-11-13
+
+### Changed
+- Updates no longer restart intrusion detection unless Suricata, a library it uses or its start script was
+  updated. Suricata runs no Stratum code: its settings change with Apply and its rules reload without a restart.
+  An inline (Block, netmap) engine resets its ports whenever it starts or stops, so every update used to take a
+  blocking WAN down for a few seconds.
+
+## 0.31.5 - 2026-11-13
+
+### Added
+- Updates: when the new version writes some settings files differently (a Suricata, pf or service setting), the
+  update now says so when it finishes - in the update log, under Alerts on the dashboard and as a notification
+  ("Apply to activate the update's changes", with the files concerned). Before, such changes waited silently for
+  the next Apply.
+
+## 0.31.4 - 2026-11-13
+
+### Fixed
+- Intrusion detection: Suricata switched the hardware offloading (checksums, TSO, LRO) of the ports it watches off
+  when it started and back on when it stopped. On igb ports every such change resets the port, so each Suricata
+  restart - an update, an Apply of IDS settings, a new DHCP address on a WAN - took the watched WAN lines down twice
+  for a few seconds, and the gateway monitor switched the default route. Suricata now leaves the ports alone
+  (`capture.disable-offloading: false`); offloading is set by Stratum only (System > Settings > Tunables, and
+  for Block ports, which need it off).
+- Upgrading: the new Suricata setting takes effect with the next Apply (`stratum-config apply`). That Apply resets the
+  watched ports one last time, as the old engine restores their flags when it stops; afterwards Suricata restarts
+  without touching them.
+
+## 0.31.3 - 2026-11-13
+
+### Changed
+- Configuration backups: a change that only adds, renames or moves separators no longer takes one of the 30 kept
+  backups, so arranging the rule lists cannot push the backups of real changes out. Moving a rule still makes a
+  backup, as it changes the order pf uses.
+
+## 0.31.2 - 2026-11-13
+
+### Changed
+- Light theme, easier on the eyes: no pure white any more - an off-white panel on a light grey background, a soft
+  grey sidebar and stronger lines. The accent is an orange close to OPNsense's instead of the yellow-brown, with
+  white text on the buttons. The dark theme is unchanged.
+
 ## 0.31.1 - 2026-11-13
 
 ### Added
