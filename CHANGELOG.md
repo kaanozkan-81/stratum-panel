@@ -4,6 +4,16 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.32.0 - 2026-11-14
+
+### Added
+- Diagnostics > Firewall Log > **Between networks**: the traffic between the internal networks that the firewall
+  logs - which network reaches which (passed and blocked), and for each destination address and port how many
+  connections from how many devices, first and last seen. Kept for 30 days after it was last seen, whatever the
+  firewall log's rotation keeps; updated every minute with the blocklist report. The firewall's own addresses are a
+  destination of their own. It is the data for segmenting the VLANs: log what a network sends to the others, allow
+  what is really used, block the rest - and see afterwards what the blocking rules stop.
+
 ## 0.31.6 - 2026-11-13
 
 ### Changed
