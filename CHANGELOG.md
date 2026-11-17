@@ -4,6 +4,88 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.34.1 - 2026-11-17
+
+### Fixed
+- WireGuard S2S: removing a tunnel's preshared key now also removes it from the running interface. The tunnels are
+  updated with "wg syncconf" (unchanged tunnels stay up), which keeps a key it is not given; the configuration now
+  always names the key, the all-zero key meaning "none". Before, the old key stayed active and the handshake failed.
+
+### Notes
+- WireGuard S2S tested against a MikroTik RouterOS 7 (RB4011), the Stratum FW behind NAT connecting.
+
+## 0.34.0 - 2026-11-16
+
+### Added
+- VPN > **WireGuard S2S**: site-to-site WireGuard tunnels to another Stratum FW, OPNsense, pfSense, MikroTik
+  RouterOS 7 or Linux. Each tunnel is its own interface (wg1, wg2 ...) with its own keys and port; the remote
+  networks are routed into it, and WireGuard accepts from the other side only addresses in those networks.
+  - This side's key pair is made when the tunnel is added; only its public key is shown, to give to the other side.
+    An optional preshared key ("Generate" makes one in the browser) is kept in a root-only file, never returned.
+  - Either side can connect: enter the other side's address where it is reachable; a side behind NAT keeps the
+    keepalive on. An optional tunnel address (e.g. 10.203.0.1/30) makes the tunnel itself pingable.
+  - Firewall: the tunnel's UDP port is open on the WAN (only from the other side when its address is known); traffic
+    from the remote networks to the local networks passes when "allow" is on, otherwise only replies; TCP MSS is
+    clamped to the tunnel MTU; policy-routed rules keep the remote networks local.
+  - Status per tunnel (connected, last handshake, traffic) on the page and in the dashboard's VPN panel.
+  - Remote networks are checked against the local, OpenVPN, WireGuard and IPsec networks (and IPsec's against these
+    tunnels), and show up in Firewall Log > Between networks as "WireGuard S2S".
+  - A tunnel can be saved disabled before the other side's public key is known, to get this side's key first.
+- The road-warrior server (wg0, VPN > WireGuard) is unchanged.
+
+## 0.33.2 - 2026-11-16
+
+### Added
+- Dashboard: IPsec tunnels in the VPN connections panel (state, remote gateway and networks, how long up, traffic)
+  and "IPsec tunnels up: n of m" in the security list - red when a tunnel is down.
+
+### Notes
+- Tested with a laptop behind a Stratum FW reaching file shares and web pages behind another Stratum FW through an
+  IKEv2 tunnel.
+
+## 0.33.1 - 2026-11-16
+
+### Added
+- VPN > IPsec: **IKEv1** next to IKEv2, for devices that do not speak IKEv2 or are set up with it (the FortiGate
+  IPsec wizard's default, older Cisco/ASA and many routers). Main mode by default; aggressive mode only when the
+  other side requires it (needed for an IKEv1 peer with a changing address). With IKEv1 every local/remote network
+  pair is its own phase 2 entry, and phase 1 is renewed by authenticating again, as IKEv1 requires.
+
+### Fixed
+- IPsec: a tunnel's remote network may no longer overlap the OpenVPN or WireGuard tunnel network or a routed internal
+  network. Traffic to a remote network is encrypted by the kernel, so the replies to VPN clients in such a network
+  went into the IPsec tunnel instead of back to the clients.
+
+### Notes
+- 0.33.0 was tested between two Stratum FW firewalls - one behind NAT, one on PPPoE: IKEv2 with NAT traversal,
+  traffic through the tunnel, and the reverse direction blocked and logged on enc0 when "allow" is off.
+
+## 0.33.0 - 2026-11-16
+
+### Added
+- VPN > **IPsec**: site-to-site tunnels to other firewalls and routers - FortiGate, MikroTik, pfSense/OPNsense,
+  Cisco, cloud VPN gateways. IKEv2 with a preshared key, policy based: a tunnel joins chosen local networks
+  (interfaces and/or networks entered by hand) with the networks behind the other side. strongSwan does the key
+  exchange; the kernel encrypts.
+  - Phase 1 and phase 2 settings per tunnel: AES-GCM or AES-CBC, SHA-2 (SHA-1 for old devices), DH groups 14-21 and
+    Curve25519 (2 and 5 marked weak), PFS, lifetimes, dead peer detection. The proposals sent are shown as you choose.
+  - "One phase 2 entry per network pair" for devices that keep one selector per subnet (FortiGate, Cisco).
+  - Connect at start and keep the tunnel up, or wait for the other side (also for peers with a changing address).
+    NAT traversal is automatic.
+  - Status per tunnel (connected, phase 1 only, connecting, not connected), how long it is up, NAT-T, traffic;
+    Connect / Disconnect buttons; the IPsec log on the same page for administrators.
+  - Firewall: IKE and ESP are allowed from the peer only; decrypted traffic appears on its own interface (enc0) and
+    a tunnel's "allow" option passes traffic from its remote networks to its local networks - everything else from
+    the tunnel is blocked and logged like any unknown traffic. Tunnel traffic is never translated (NAT exemption),
+    TCP MSS is clamped in the tunnel (default 1350) and policy-routed rules keep tunnel traffic local.
+  - The preshared key is kept in a root-only file, never in config.json, never shown again and never returned by
+    the API; "Generate" makes a strong key in the browser to copy to the other side. Keys go into encrypted backups.
+  - The tunnels' remote networks appear in Firewall Log > Between networks as "IPsec".
+- New package dependency: strongSwan.
+
+### Changed
+- `stratum-config diff` no longer shows WireGuard keys (and IPsec keys) in plain text.
+
 ## 0.32.0 - 2026-11-14
 
 ### Added
