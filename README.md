@@ -1,41 +1,64 @@
-# Stratum FW
+<div align="center">
 
-A free, subscription-free firewall and gateway appliance OS built on **FreeBSD 15.1-RELEASE** and **pf**, managed from a modern asynchronous **Python 3.12 & FastAPI** web panel, in the spirit of pfSense and OPNsense *(core FastAPI panel source is kept closed during Beta; installer images, documentation, changelog, and issue tracking are public)*. One declarative configuration file, a 60-second **Safe-Apply** with automatic rollback, built-in **TOTP 2FA**, and signed updates with atomic **ZFS Boot Environments**.
+# Stratum Firewall (Stratum FW)
 
-* **Current release:** `0.30.3` (November 2026) — [Release History (CHANGELOG.md)](CHANGELOG.md)
-* **Live Browser Demo (FreeBSD 15.1 QEMU VM):** <https://demo.stratumfw.com> *(Login: `demo` / `Stratum2026` — auto-filled, zero signup)*
-* **Official Website & Downloads (`.iso` VGA & `.img` Serial):** <https://stratumfw.com> · [Download Installers](https://stratumfw.com/download/)
-* **Documentation & Architecture Comparison:** [Documentation Hub](https://stratumfw.com/resources/documentation/) · [OPNsense Migration Guide](https://stratumfw.com/resources/documentation/opnsense-migration/) · [Firewall & UTM Comparison](https://stratumfw.com/compare/)
+**Free, Zero-Subscription Network Security & Routing Appliance OS on FreeBSD 15.1-RELEASE, Kernel `pf`, OpenZFS & FastAPI**
 
-## Try It Live in Your Browser
+[[https://img.shields.io/badge/Live_Demo-demo.stratumfw.com-10b981?style=for-the-badge]](https://demo.stratumfw.com)
+[[https://img.shields.io/badge/Download-v0.34.1_ISO_%26_IMG-f59e0b?style=for-the-badge]](https://stratumfw.com/download/)
+[[https://img.shields.io/badge/Docs-stratumfw.com-0ea5e9?style=for-the-badge]](https://stratumfw.com/product/features/)
+[[https://img.shields.io/badge/Changelog-v0.34.1-6366f1?style=for-the-badge]](./CHANGELOG.md)
 
-Explore a real Stratum FW appliance running on an isolated FreeBSD 15.1 virtual machine before downloading media:
+<br>
 
-* **Launch Live Demo:** <https://demo.stratumfw.com> ([Demo Overview](https://stratumfw.com/demo/))
-* **Credentials:** Username `demo` · Password `Stratum2026` *(automatically filled on sign-in; runs in a read-only Copy-on-Write sandbox)*
+<a href="https://demo.stratumfw.com">
+  <img src="./docs/images/hero.jpg" alt="Stratum Firewall Flagship Showcase" width="100%">
+</a>
 
-## Highlights (`v0.30.3`)
+</div>
 
-* **Built-In TOTP Two-Factor Sign-In (`v0.30.0`).** Protect panel accounts with 6-digit authenticator codes (*Google/Microsoft Authenticator, 1Password, Bitwarden*). QR codes render locally in the browser so secrets never leave the firewall, paired with single-use replay protection, 10 one-time recovery codes, session revocation, and console recovery (`stratum-menu`).
-* **Force DNS with Active Directory Exceptions (`v0.29.2`).** Redirect client DNS queries on selected internal networks to Stratum's resolver regardless of hardcoded DNS (`8.8.8.8`) and block DNS over TLS (`TCP 853`) so DNSBL and the 55-category Web Filter cannot be bypassed—with an Exception alias for internal AD domain controllers and zero browsing history recorded.
-* **Multi-WAN Failover, Dynamic DHCP `WAN2` & Policy Routing (`v0.16` – `v0.29.1`).** 1-second gateway health probes across Static, PPPoE, and secondary/tertiary **DHCP WANs** (cable, 4G/5G LTE, Starlink), symmetric `reply-to`, and per-rule Policy Routing that tracks ISP gateway lease renewals within seconds without an Apply.
-* **Time-Based Firewall Schedules & Bidirectional 1:1 NAT (`v0.28.9` – `v0.29.0`).** Attach minute-accurate schedules (`stratum-pfrefresh`) that automatically close open states when a pass window ends, and map internal servers/subnets 1:1 to public WAN Virtual IPs or routed subnets with anti-lockout WAN IP protection.
-* **Unified Threat Defense & Log Analytics (`v0.24` – `v0.28.8`).** 63 automated IP feeds, Unbound 1.26 RPZ DNSBL, 55-category Web Filter with forced Safe Search, per-interface dual-engine **Suricata 8 IPS/IDS** (`netmap` + `pcap`), pfBlockerNG-style **Unified Blocklist Reports**, and a **1h/24h Firewall Log Summary** with GeoIP countries and one-click live log drilldown.
-* **Drop-In OPNsense & OpenVPN Migration (`v0.25.0` – `v0.30.2`).** Import an OPNsense `config.xml`—interfaces, VLANs, DHCP `WAN2`, rules, Force DNS redirects, Unbound DNSBL feeds & allow/block lists, catalog URL-table IP feeds, GeoIP/Hostname aliases, Virtual IPs, and optional complete **OpenVPN server takeover** (`$2y$` bcrypt & `argon2id` hashes + PKI) so existing client `.ovpn` profiles connect unchanged.
-* **Safe-Apply & ZFS Boot Environments (`v0.28.0`).** Every change is syntax-checked (`pfctl -n`, `nginx -t`, `sshd -t`, `unbound-checkconf`, `dnsmasq --test`) and guarded by a 60-second automatic rollback timer; every online or `.sfu` air-gap update snapshots `zroot/ROOT/*` first.
-* **Kernel WireGuard, Multi-WAN OpenVPN & Read-Only AI MCP.** On-box `if_wg` X25519 QR provisioning, built-in OpenVPN EC CA, Wireshark `.pcap` capture, Wake-on-LAN, encrypted `AES-256-GCM` SFTP backups (`.stbk`), SNMP monitoring, and a strictly read-only **Model Context Protocol (MCP)** server for AI-assisted troubleshooting.
+## Overview
 
-## Installation Media
+**Stratum Firewall** is a self-contained `amd64` firewall, VPN hub, and UTM gateway built on **FreeBSD 15.1-RELEASE**, stateful `pf`, and **OpenZFS**, managed through an asynchronous **Python 3.12 / FastAPI** web control plane with zero PHP and zero recurring license fees.
 
-Download from <https://stratumfw.com/download/> and follow the [Installation Guide](https://stratumfw.com/resources/documentation/installation/):
+* **Current Release:** `v0.34.1` (November 2026) — [Release Notes & Changelog](./CHANGELOG.md)
+* **Interactive Live Demo (Light & Dark UI, no signup):** [https://demo.stratumfw.com](https://demo.stratumfw.com)
+* **Offline VGA `.iso` & Headless `115200 8N1` Serial `.img` Installers:** [https://stratumfw.com/download/](https://stratumfw.com/download/)
+* **Repository Note:** Core FastAPI panel sources remain in a private build tree prior to `v1.0`; this public repository hosts architectural documentation, full release changelogs, and community issue tracking.
 
-| Variant | Target Hardware / Hypervisor | Default Console |
-| :--- | :--- | :--- |
-| **VGA ISO (`.iso`)** | Bare-metal servers with monitor/keyboard, Proxmox VE, VMware ESXi, KVM/QEMU, Hyper-V | VGA Display |
-| **Serial IMG (`.img`)** | Headless network appliances, mini-PCs, RJ45/USB console cables, IPMI Serial-over-LAN | `115200 8N1` (`ttyu0`) |
+## Architecture & Visual Highlights
 
-After installing from `.iso` or `.img`, update directly to **`v0.30.3`** via **System → Update** (online or offline `.sfu` package).
+| Multi-Vendor IPsec & WireGuard S2S Hub | Live S2S Tunnel & Kernel Crypto Telemetry |
+| :---: | :---: |
+| <img src="./docs/images/s2s_topo.jpg" alt="Multi-Vendor Site-to-Site IPsec and WireGuard Topology" width="100%"> | <img src="./docs/images/s2s_panel.jpg" alt="Live IPsec and WireGuard S2S Status Panel" width="100%"> |
+| **Appliance & Dual-Theme Control Plane** | **3-Tier FreeBSD 15.1 + OpenZFS + FastAPI Stack** |
+| <img src="./docs/images/showcase.jpg" alt="Stratum Firewall Hardware and Dashboard Showcase" width="100%"> | <img src="./docs/images/stack.jpg" alt="Stratum Firewall 3-Tier Architecture Stack" width="100%"> |
 
-## Feedback & Issue Reporting
+## Key Capabilities (`v0.34.1`)
 
-Found a bug or want to request a feature during Beta? Open an issue in this repository or reach out via <https://stratumfw.com/company/contact/>.
+* **Declarative Single-File Config & 60s Safe-Apply:** Every rule, interface, and VPN change is pre-checked (`pfctl -n`, `unbound-checkconf`, `dnsmasq --test`, `nginx -t`) and applied inside a **60-second anti-lockout rollback window**, with private keys isolated in `0600` root-only files.
+* **Atomic ZFS Boot Environments (`bectl`):** Every online package update or offline `.sfu` upgrade snapshots the root ZFS pool automatically for instant boot-menu or Web UI rollback.
+* **Multi-Vendor Site-to-Site IPsec (`IKEv2` & `IKEv1`):** Policy-based `strongSwan` key negotiation with FreeBSD kernel ESP crypto (`enc0`), multi-subnet Phase 2 selectors, automatic `NAT-T` (UDP `4500`), TCP MSS `1360` clamping, and outbound NAT exemption for FortiGate, Cisco, OPNsense, and cloud VPC gateways.
+* **Dedicated Kernel WireGuard S2S (`wg1, wg2...`) & Mobile VPN (`wg0`):** Isolated per-branch `if_wg` interfaces verified behind NAT against MikroTik RouterOS 7 with hitless `wg syncconf` reloads, alongside QR road-warrior WireGuard and Multi-WAN OpenVPN (EC PKI + `tls-crypt`).
+* **Dual-Engine Suricata 8 IPS/IDS & Hitless Updates:** Per-interface `netmap` inline IPS and `pcap` IDS with zero `igb` hardware offload link flaps during engine reloads or OS updates.
+* **Unbound 1.26 RPZ DNSBL, 55-Category Web Filter & 63 IPv4 Feeds:** Kernel `pf` threat tables, DNS blocklists, Force DNS enforcement (with Active Directory domain exceptions), and unified blocklist analytics at `$0/year`.
+* **30-Day Inter-VLAN & VPN Traffic Matrix:** Rolling 30-day east-west subnet flow matrix (`Diagnostics -> Firewall Log -> Between networks`) across VLANs, `enc0` IPsec, and `wg1+` WireGuard links for confident micro-segmentation.
+* **1-Click OPNsense Migration & Read-Only MCP Server:** Direct `config.xml` import (interfaces, VLANs, `/29` VIPs, aliases, rules, NAT, Unbound DNSBL, full-span DHCP pools, and OpenVPN PKI), local-QR TOTP 2FA, encrypted `.stbk` SFTP backups, and a 14-tool read-only Model Context Protocol (MCP) telemetry server.
+
+## System Architecture
+
+| Layer | Component |
+| :--- | :--- |
+| **Operating System** | FreeBSD 15.1-RELEASE (`amd64`), OpenZFS root, `bectl` Boot Environments |
+| **Packet Filter & QoS** | Stateful FreeBSD `pf`, radix tables, policy routing, 1:1 NAT, time schedules |
+| **Control Plane** | Asynchronous Python 3.12, FastAPI, Jinja2, Uvicorn behind hardened Nginx |
+| **VPN & Crypto** | Kernel ESP (`enc0`) + `strongSwan` (`IKEv2`/`IKEv1`), Kernel `if_wg` (`wg0` + `wg1+` S2S), OpenVPN |
+| **Threat & DNS Stack** | Suricata 8 (`netmap` + `pcap`), Unbound 1.26 RPZ, `dnsmasq`, 63 IPv4 blocklists |
+| **Installers & Updates** | Offline VGA `.iso`, Headless Serial `.img` (`115200 8N1`), signed FreeBSD `pkg` repo & `.sfu` bundles |
+
+## Latest Engineering Articles
+
+* **EN:** [Stratum Firewall v0.34.1: Site-to-Site IPsec, Dedicated WireGuard S2S, 30-Day VLAN Traffic Matrix, and Hitless Suricata Updates](https://stratumfw.com/blog/stratum-firewall-v0-34-1-ipsec-wireguard-s2s-vlan-matrix-hitless-suricata/)
+* **TR:** [Stratum Firewall v0.34.1: Merkezden Şubeye IPsec, Adanmış WireGuard S2S, 30 Günlük VLAN Trafik Matrisi ve Kesintisiz Suricata Güncellemeleri](https://stratumfw.com/tr/blog/stratum-firewall-v0-34-1-ipsec-wireguard-s2s-vlan-matrisi-kesintisiz-suricata/)
+
+© 2026 Kaan Özkan. All rights reserved.
