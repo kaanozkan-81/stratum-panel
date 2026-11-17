@@ -10,6 +10,10 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## v0.34.2 — 2026-11-17
+
+* **OpenSSL Key Generation (`cryptography`):** Migrated X25519 / WireGuard helper key generation in the Python control plane to OpenSSL via the audited `cryptography` library so Stratum FW implements zero custom cryptographic primitives of its own.
+
 ## 0.34.1 - 2026-11-17
 
 ### Fixed

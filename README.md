@@ -5,9 +5,9 @@
 **Free, Zero-Subscription Network Security & Routing Appliance OS on FreeBSD 15.1-RELEASE, Kernel `pf`, OpenZFS & FastAPI**
 
 [[https://img.shields.io/badge/Live_Demo-demo.stratumfw.com-10b981?style=for-the-badge]](https://demo.stratumfw.com)
-[[https://img.shields.io/badge/Download-v0.34.1_ISO_%26_IMG-f59e0b?style=for-the-badge]](https://stratumfw.com/download/)
+[[https://img.shields.io/badge/Download-v0.34.2_ISO_%26_IMG-f59e0b?style=for-the-badge]](https://stratumfw.com/download/)
 [[https://img.shields.io/badge/Docs-stratumfw.com-0ea5e9?style=for-the-badge]](https://stratumfw.com/product/features/)
-[[https://img.shields.io/badge/Changelog-v0.34.1-6366f1?style=for-the-badge]](./CHANGELOG.md)
+[[https://img.shields.io/badge/Changelog-v0.34.2-6366f1?style=for-the-badge]](./CHANGELOG.md)
 
 <br>
 
@@ -21,7 +21,7 @@
 
 **Stratum Firewall** is a self-contained `amd64` firewall, VPN hub, and UTM gateway built on **FreeBSD 15.1-RELEASE**, stateful `pf`, and **OpenZFS**, managed through an asynchronous **Python 3.12 / FastAPI** web control plane with zero PHP and zero recurring license fees.
 
-* **Current Release:** `v0.34.1` (November 2026) — [Release Notes & Changelog](./CHANGELOG.md)
+* **Current Release:** `v0.34.2` (November 2026) — [Release Notes & Changelog](./CHANGELOG.md)
 * **Interactive Live Demo (Light & Dark UI, no signup):** [https://demo.stratumfw.com](https://demo.stratumfw.com)
 * **Offline VGA `.iso` & Headless `115200 8N1` Serial `.img` Installers:** [https://stratumfw.com/download/](https://stratumfw.com/download/)
 * **Repository Note:** Core FastAPI panel sources remain in a private build tree prior to `v1.0`; this public repository hosts architectural documentation, full release changelogs, and community issue tracking.
@@ -34,7 +34,7 @@
 | **Appliance & Dual-Theme Control Plane** | **3-Tier FreeBSD 15.1 + OpenZFS + FastAPI Stack** |
 | <img src="./docs/images/showcase.jpg" alt="Stratum Firewall Hardware and Dashboard Showcase" width="100%"> | <img src="./docs/images/stack.jpg" alt="Stratum Firewall 3-Tier Architecture Stack" width="100%"> |
 
-## Key Capabilities (`v0.34.1`)
+## Key Capabilities (`v0.34.2`)
 
 * **Declarative Single-File Config & 60s Safe-Apply:** Every rule, interface, and VPN change is pre-checked (`pfctl -n`, `unbound-checkconf`, `dnsmasq --test`, `nginx -t`) and applied inside a **60-second anti-lockout rollback window**, with private keys isolated in `0600` root-only files.
 * **Atomic ZFS Boot Environments (`bectl`):** Every online package update or offline `.sfu` upgrade snapshots the root ZFS pool automatically for instant boot-menu or Web UI rollback.
@@ -58,7 +58,11 @@
 
 ## Latest Engineering Articles
 
-* **EN:** [Stratum Firewall v0.34.1: Site-to-Site IPsec, Dedicated WireGuard S2S, 30-Day VLAN Traffic Matrix, and Hitless Suricata Updates](https://stratumfw.com/blog/stratum-firewall-v0-34-1-ipsec-wireguard-s2s-vlan-matrix-hitless-suricata/)
-* **TR:** [Stratum Firewall v0.34.1: Merkezden Şubeye IPsec, Adanmış WireGuard S2S, 30 Günlük VLAN Trafik Matrisi ve Kesintisiz Suricata Güncellemeleri](https://stratumfw.com/tr/blog/stratum-firewall-v0-34-1-ipsec-wireguard-s2s-vlan-matrisi-kesintisiz-suricata/)
+* **EN:** [Stratum Firewall v0.34.2: Site-to-Site IPsec, Dedicated WireGuard S2S, 30-Day VLAN Traffic Matrix, and Hitless Suricata Updates](https://stratumfw.com/blog/stratum-firewall-v0-34-1-ipsec-wireguard-s2s-vlan-matrix-hitless-suricata/)
+* **TR:** [Stratum Firewall v0.34.2: Merkezden Şubeye IPsec, Adanmış WireGuard S2S, 30 Günlük VLAN Trafik Matrisi ve Kesintisiz Suricata Güncellemeleri](https://stratumfw.com/tr/blog/stratum-firewall-v0-34-1-ipsec-wireguard-s2s-vlan-matrisi-kesintisiz-suricata/)
+
+## Security & Vulnerability Disclosure
+
+See [Security & Verification](https://stratumfw.com/product/security/) and [`/.well-known/security.txt`](https://stratumfw.com/.well-known/security.txt), or report vulnerabilities privately to **security@stratumfw.com**.
 
 © 2026 Kaan Özkan. All rights reserved.
