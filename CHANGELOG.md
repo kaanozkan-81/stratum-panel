@@ -10,6 +10,16 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## v0.35.1 — 2026-11-18
+
+* **Deterministic MCP Rule & Counter Math:** Firewall and NAT rule MCP tools now return exact pre-computed rule counts (`all`, `enabled`, `disabled`) instead of leaving counting to the LLM, and explicitly annotate `0` packet counters (`not matched since last Apply/reload` rather than `never used`). Production-verified with DeepSeek answering in the question's language, masking public IPs, and pointing cleanly to target panel pages.
+
+## v0.35.0 — 2026-11-18
+
+* **Built-In `Diagnostics > AI Assistant`:** Ask about live firewall state in plain language (*"what was blocked in the last hour?"*, *"is WAN2 healthy?"*, *"is any inside device suspicious?"*) through the 14 read-only MCP tools. Cannot modify configuration; displays the exact tools used under each answer and explains where in the panel to make changes.
+* **5 AI Providers Including Air-Gapped Local `Ollama`:** Supports Anthropic Claude, OpenAI, DeepSeek, Google Gemini, and an on-premise **Ollama** server on your LAN where zero questions or telemetry leave your network.
+* **Privacy-First IP Masking & Ephemeral RAM:** Public IPs are replaced with aliases (`PUB-1`, `PUB-2`...) by default before cloud requests and restored in the displayed answer; no tool returns passwords, keys, or VPN configs; API keys stay in `0600` root-only files (included in encrypted backups) with a **Test** button; Admin-only with 1-hour in-memory chat retention (questions and answers are never logged to disk).
+
 ## v0.34.2 — 2026-11-17
 
 * **OpenSSL Key Generation (`cryptography`):** Migrated X25519 / WireGuard helper key generation in the Python control plane to OpenSSL via the audited `cryptography` library so Stratum FW implements zero custom cryptographic primitives of its own.
