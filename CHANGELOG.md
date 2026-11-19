@@ -1,14 +1,13 @@
----
-title: "Changelog"
-seo_title: "Stratum Firewall Changelog (v0.30.3) — FreeBSD 15.1 Release Notes"
-description: "Complete release history of Stratum Firewall through v0.30.3 — OPNsense Unbound DNSBL migration, full-span DHCP pools, dummynet/dnctl shaper pre-checks, TOTP 2FA, Force DNS, DHCP Multi-WAN, 1:1 NAT, and schedules."
-seoTitle: "Stratum Firewall Changelog & Release Notes (v0.34.1)"
-seoDescription: "Complete release history of Stratum Firewall on FreeBSD 15.1: new features, security hardening, OPNsense import upgrades, and pf/DPI fixes in every version."
----
+# Changelog
 
 All notable changes to Stratum FW are listed here, newest first. Stratum FW updates itself from the signed
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
+
+## v0.35.2 — 2026-11-19
+
+* **Notifications Only for Reachable Intrusion Alerts:** Suricata watches a WAN before `pf` filters it, so an attack aimed at a port the firewall does not open (for example the Realtek SDK exploit on UDP `9034`, CVE-2021-35394) raised a high-severity alert and a Telegram / e-mail message although `pf` dropped the packets. Stratum FW now works out what is really open on its WAN addresses — port forwards with their source addresses and port aliases, WAN pass rules (interface groups included), management from WAN, OpenVPN, WireGuard and IPsec — and notifies only alerts from inside, to inside hosts, or to a port that is open for that source. Anything it cannot work out (a GeoIP source, a protocol without ports) is still notified.
+* **Nothing Hidden:** Such alerts stay in the log and on the IDS page marked **Port closed**; the MCP tools and the AI Assistant see the same mark. `System > Settings > Notifications` has a new switch (off by default) to receive them as well.
 
 ## v0.35.1 — 2026-11-18
 
@@ -16,7 +15,7 @@ environment, so the previous version can be booted again at any time.
 
 ## v0.35.0 — 2026-11-18
 
-* **Built-In `Diagnostics > AI Assistant`:** Ask about live firewall state in plain language (*"what was blocked in the last hour?"*, *"is WAN2 healthy?"*, *"is any inside device suspicious?"*) through the 14 read-only MCP tools. Cannot modify configuration; displays the exact tools used under each answer and explains where in the panel to make changes.
+* **Built-In `Diagnostics > AI Assistant`:** Ask about live firewall state in plain language (*"what was blocked in the last hour?"*, *"is WAN2 healthy?"*, *"is any inside device suspicious?"*) through the 15 read-only MCP tools. Cannot modify configuration; displays the exact tools used under each answer and explains where in the panel to make changes.
 * **5 AI Providers Including Air-Gapped Local `Ollama`:** Supports Anthropic Claude, OpenAI, DeepSeek, Google Gemini, and an on-premise **Ollama** server on your LAN where zero questions or telemetry leave your network.
 * **Privacy-First IP Masking & Ephemeral RAM:** Public IPs are replaced with aliases (`PUB-1`, `PUB-2`...) by default before cloud requests and restored in the displayed answer; no tool returns passwords, keys, or VPN configs; API keys stay in `0600` root-only files (included in encrypted backups) with a **Test** button; Admin-only with 1-hour in-memory chat retention (questions and answers are never logged to disk).
 
