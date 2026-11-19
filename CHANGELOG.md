@@ -4,6 +4,28 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.36.0 - 2026-11-19
+
+### Added
+- **Captive portal** (Services > Captive Portal): a sign-in page for guest networks, in the manner of pfSense.
+  - Zones: one or more internal interfaces per zone. A device that has not signed in reaches only DNS on the
+    firewall, the sign-in page and the zone's allowed destinations; its http:// requests are sent to the page, and
+    phones and laptops open it by themselves through their own connectivity checks. After sign-in the interface's
+    own firewall rules apply, as for any other device.
+  - Sign-in without a password (accept the terms and connect) or with local user accounts: optional expiry date,
+    a limit on devices per user, wrong passwords lock the address out for a few minutes.
+  - Time limit, idle time (no new traffic) and sign-out when another device takes the address (MAC check);
+    when a zone's sign-in method changes, its devices sign in again the new way.
+  - The page: title, message, terms of use, button text, colour, logo, English or Turkish; it adapts to phones and
+    to dark mode.
+  - Exceptions: devices that never sign in (printers, TV boxes) and destinations allowed before sign-in.
+  - Signed-in devices are listed live and can be disconnected; operators can manage the user accounts and
+    disconnect devices, zones are for administrators. Every sign-in and sign-out goes to the system log.
+- Built to keep the guest side small: the page runs as an unprivileged user and knows nothing secret; sign-ins are
+  checked by a separate root service over a local socket. Passwords are stored as bcrypt hashes in a root-only
+  file and never sent to the browser. Signed-in devices stay connected across pf reloads, Apply and a restart of
+  the service.
+
 ## v0.35.2 — 2026-11-19
 
 * **Notifications Only for Reachable Intrusion Alerts:** Suricata watches a WAN before `pf` filters it, so an attack aimed at a port the firewall does not open (for example the Realtek SDK exploit on UDP `9034`, CVE-2021-35394) raised a high-severity alert and a Telegram / e-mail message although `pf` dropped the packets. Stratum FW now works out what is really open on its WAN addresses — port forwards with their source addresses and port aliases, WAN pass rules (interface groups included), management from WAN, OpenVPN, WireGuard and IPsec — and notifies only alerts from inside, to inside hosts, or to a port that is open for that source. Anything it cannot work out (a GeoIP source, a protocol without ports) is still notified.
