@@ -4,6 +4,57 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.39.0 - 2026-11-23
+
+### Added
+- **Firewall > Application Control > Rules: block applications.** A rule covers interfaces, Stratum categories
+  (VPN and proxies, Social media, Games ...), applications by name (also custom ones), and optionally *encrypted
+  connections without a server name* - typical of VPN and tunnel apps - with devices as exceptions. The first
+  matching rule decides.
+  - **Monitor only** (the default for every new rule) blocks nothing and records what would have been blocked.
+  - **Block**: applications named by their server name are cut one connection at a time, during the TLS / QUIC
+    handshake, and every new try again - nothing else on the same server address is touched. QUIC to that server is
+    refused for 10 minutes, so browsers fall back to TCP, where every connection is checked by name. Connections
+    without a server name (VPN tunnels) also block that device from that server for 10 minutes. The device sees
+    "connection reset" at once.
+  - Only names the engine is sure of are acted upon - never a guess from a port or an address. Network services
+    (DNS, DHCP, NTP), private addresses and connections already open when the engine started are never touched.
+    Every block is lifted when the collector stops or the rule is switched off.
+- **Blocked** tab: per device, application and rule, what was blocked or would have been, with counts and times.
+- The status line shows the active rules, connections cut and devices blocked; pf errors are shown too.
+- AI Assistant: the tool *Application usage* also lists the rules and what they blocked (read-only).
+- **Application Control: block page.** A rule in Block mode can show a page saying the site is blocked, instead of a
+  connection error. It names the site, the application, the rule, the device and the time.
+  - The firewall's DNS (Unbound) answers the names of what the rule blocks with `198.18.0.1` for the rule's networks
+    (not for its exceptions); the firewall sends web traffic for that address to the block page. QUIC to it is
+    refused, so browsers use HTTPS over TCP at once.
+  - HTTPS: the page gets a certificate for the requested name on the spot, signed by the new **Block Page CA**.
+    Devices that trust the CA show the page; the others a certificate warning - blocked either way.
+  - The names come from nDPI's own domain list for each application (about 1 000 domains) and the custom
+    applications.
+  - Devices that use another DNS server are still blocked by cutting their connections, as before.
+  - Pages shown are counted on the Blocked tab.
+- **Application Control > Block page**: your own logo and a wide picture across the top (PNG / JPEG / WebP), organisation name, title, texts, contact
+  line, colour, which details are shown and their labels - in any language, with a live preview. Saved changes are in
+  use at once, without Apply.
+- **System > Certificates > Block Page CA**: create, replace, delete; download as `.cer` (Windows / Group Policy) or
+  `.crt` (PEM), with Group Policy steps. The CA key stays on the firewall; a CA in use cannot be deleted.
+- **System > Certificates**: download the web panel certificate.
+
+### Changed
+- Engine stratum-dpi 1.2: says how far each name can be trusted (server name / payload, partial, port or address
+  guess), what the device sent first (TLS ClientHello, QUIC Initial, other, nothing), and hands every new connection
+  over at once (it waited in a buffer before).
+- A connection whose server name is known is named at once instead of after nDPI's packet limit.
+- When nDPI only guessed a name from the port or address, the server name wins.
+- Apply reloads the collector's blocks after a pf reload.
+- Unbound: the web filter's and Application Control's tags are merged into one list per network.
+- Firefox is told not to switch to DNS over HTTPS while a rule shows the block page.
+
+### Security
+- The block page server runs as its own unprivileged user (`_stratumbp`), only it and root can read the CA key, and
+  its ports cannot be reached directly from any network.
+
 ## 0.38.0 - 2026-11-23
 
 ### Added
