@@ -8,7 +8,7 @@
   <a href="https://demo.stratumfw.com"><img src="https://img.shields.io/badge/Live_Demo-demo.stratumfw.com-38bdf8?style=for-the-badge" alt="Live Demo"></a>
   <a href="https://stratumfw.com/product/ai-assistant/"><img src="https://img.shields.io/badge/AI_Assistant-Read--Only_MCP_%2B_Ollama-f59e0b?style=for-the-badge" alt="AI Assistant"></a>
   <a href="https://stratumfw.com/product/security-guard/"><img src="https://img.shields.io/badge/Security_Guard-5--Layer_Defense-fbbf24?style=for-the-badge" alt="Security Guard"></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.36.1-6366f1?style=for-the-badge" alt="Release v0.36.1"></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.37.2-6366f1?style=for-the-badge" alt="Release v0.37.2"></a>
 </p>
 
 <br>
@@ -23,7 +23,7 @@
 
 **Stratum Firewall** is a self-contained `amd64` firewall, multi-vendor VPN hub, and layered threat-defense gateway built on **FreeBSD 15.1-RELEASE**, stateful `pf`, and **OpenZFS**, managed through an asynchronous **Python 3.12 / FastAPI** control plane with zero PHP and `$0/year` recurring licensing.
 
-* **Current Release:** `v0.36.1` (November 2026) — [Full Release History (`CHANGELOG.md`)](./CHANGELOG.md)
+* **Current Release:** `v0.37.2` (November 2026) — [Full Release History (`CHANGELOG.md`)](./CHANGELOG.md)
 * **Interactive Live Demo (Light & Dark UI, no signup):** [https://demo.stratumfw.com](https://demo.stratumfw.com)
 * **Offline VGA `.iso` & Headless `115200 8N1` Serial `.img` Installers:** [https://stratumfw.com/download/](https://stratumfw.com/download/)
 * **Open by Design:** Every generated daemon configuration (`config.json`, `pf.conf`, `swanctl.conf`, `wg*.conf`, `unbound.conf`) lives in plain, auditable text on disk. Core FastAPI panel sources are maintained in a private build tree during pre-`v1.0` iteration and will be published on GitHub.

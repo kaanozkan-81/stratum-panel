@@ -4,6 +4,12 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.37.2 - 2026-11-22
+
+### Fixed
+- **System > Backup > Automatic backup:** *Test connection* answered "Request failed (422)" in 0.37.1, so an SMB or
+  SFTP server could not be tested from the page. *Browse*, *Back up now* and the scheduled backups were not affected.
+
 ## 0.36.1 - 2026-11-19
 
 ### Added
