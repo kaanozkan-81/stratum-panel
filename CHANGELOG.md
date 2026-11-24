@@ -4,6 +4,20 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.39.5 - 2026-11-24
+
+### Added
+- **Firewall > Web Filter > Keywords - new sites by their name.** Sites that keep coming back under new names
+  (betting sites: site1234.com, site1235.com ...) are found by a word in their name - a brand name or a word such
+  as *bahis* or *casino* - as soon as a device asks the firewall's DNS for them.
+  - **List them only** (the default): the sites found are listed with the keyword, the time and the first device;
+    one click blocks one, ignores it or makes it an exception.
+  - **Block them at once**: they go straight into **Your own list** and are blocked within seconds by the
+    policies that choose that category, with the block page where the policy shows it.
+  - Only the site's own name counts (not its subdomains or top-level domain); exceptions still win.
+  - Works without Web Activity: the collector then only watches the DNS queries for the keywords and records
+    nothing.
+
 ## 0.39.0 - 2026-11-23
 
 ### Added
