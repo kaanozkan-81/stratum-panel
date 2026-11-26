@@ -4,6 +4,60 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.40.0 - 2026-11-26
+
+### Added
+- **Firewall > Download Control - check the files the devices download.** Programs, scripts and other file types
+  can be recorded or blocked as they are downloaded, over HTTP and HTTPS.
+  - **Web proxy:** the firewall runs a web proxy on its own address in the internal networks you choose (port
+    3128). Devices use it once they are set to, for example on a Windows domain with a Group Policy. The panel
+    lists the steps. Devices that are not set to use it are not checked.
+  - **What the file really is:** the decision uses the file's name, the type the site claims, and the first bytes
+    of the file itself. Recognised: Windows, Linux and macOS programs, MSI, APK, JAR, MSIX, ZIP, RAR, 7z, CAB, PDF
+    and Office files. The parts of a web page (scripts, pictures, compressed pages) do not count as downloads.
+  - **Disguised programs**, for example an .exe named .jpg or .pdf, are recognised by their content. They can be
+    blocked whatever file types are chosen.
+  - **File types:** programs and installers, scripts and shortcuts, archives, disk images, documents, video and
+    audio. Programs and scripts are chosen by default.
+  - **Monitor or Block:**
+    - **Monitor** records what would be blocked and blocks nothing. Start with Monitor for a few days.
+    - **Block** replaces the file with a page saying the download is blocked. The page has the block page's design.
+  - **Bypass list:** these sites are never opened and their files are not checked. Use it for banks, government
+    (gov.tr), operating system updates, security software, and apps that accept only their own certificate. A
+    default list can be added with one click.
+  - **Always allowed:** these sites are checked and recorded but never blocked.
+  - **Downloads tab:**
+    - shows the time, device, site, file, type, size and result;
+    - can be searched and filtered;
+    - keeps the records for 1 to 365 days (30 by default).
+  - Administrators only, and every look at the records is logged.
+  - **If the checker stops, downloads go through.** Antivirus software on the PCs keeps doing its own checks.
+- **System > Certificates > Inspection CA.** A certificate authority of its own for Download Control, separate from
+  the Block Page CA. The proxy uses it to open HTTPS.
+  - Install it on the devices that use the proxy: download it as **.cer** for Windows and Group Policy, or as
+    **.crt** (PEM).
+  - The SHA-256 fingerprint is shown so you can compare it on the devices.
+  - Its key never leaves the firewall.
+
+### Changed
+- **An Apply that fails half way is undone at once.** If an unexpected error stops an Apply after the current
+  state has been saved, the firewall goes back to it right away instead of waiting for a confirmation. The message
+  says so. If going back fails too, the message says what to run. The log now shows where the error happened.
+- **Squid** (the web proxy) is now part of the installation.
+
+## 0.39.6 - 2026-11-25
+
+### Changed
+- **Every interface starts closed.** A new installation (and a factory reset) no longer lets LAN and the VLANs reach
+  everything - including each other. Like zone-based firewalls, nothing passes until a rule allows it; the web panel
+  stays reachable from LAN (anti-lockout) and DHCP keeps working. Existing installations keep their rules.
+
+### Added
+- **Destination "Internet (not private networks)"** in firewall rules: anything except 10.0.0.0/8, 172.16.0.0/12,
+  192.168.0.0/16 and 100.64.0.0/10. ("WAN net" is only the WAN link's own subnet, not the internet.)
+- **Allow internet access**: an interface without rules shows a note and a button that adds two rules - this firewall
+  (DNS, NTP, ping) and the internet, not the other networks.
+
 ## 0.39.5 - 2026-11-24
 
 ### Added
