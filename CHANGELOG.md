@@ -4,6 +4,16 @@ All notable changes to Stratum FW are listed here, newest first. Stratum FW upda
 update server (System > Update) or from an offline update file (`.sfu`); every update creates a ZFS boot
 environment, so the previous version can be booted again at any time.
 
+## 0.40.1 - 2026-11-26
+
+### Fixed
+- **Download Control: Google's own data was taken for a program.** Google's web services send some of their data
+  (JSON) as an attachment named `response.bin`, and in Block mode this was blocked. Parts of Google pages stopped
+  working as a result. Now, when a file's name says program, archive or disk image but its content is plainly text,
+  the content wins. `.bin` alone no longer means a program; a real program is still recognised by its first bytes.
+- **Download Control: compressed transfers.** A file sent gzip- or deflate-compressed is now opened far enough to
+  see its first bytes, so a compressed program is recognised as a program as well.
+
 ## 0.40.0 - 2026-11-26
 
 ### Added

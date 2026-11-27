@@ -8,7 +8,7 @@
   <a href="https://demo.stratumfw.com"><img src="https://img.shields.io/badge/Live_Demo-demo.stratumfw.com-38bdf8?style=for-the-badge" alt="Live Demo"></a>
   <a href="https://stratumfw.com/product/ai-assistant/"><img src="https://img.shields.io/badge/AI_Assistant-Read--Only_MCP_%2B_Ollama-f59e0b?style=for-the-badge" alt="AI Assistant"></a>
   <a href="https://stratumfw.com/product/security-guard/"><img src="https://img.shields.io/badge/Security_Guard-5--Layer_Defense-fbbf24?style=for-the-badge" alt="Security Guard"></a>
-  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.40.0-6366f1?style=for-the-badge" alt="Release v0.40.0"></a>
+  <a href="./CHANGELOG.md"><img src="https://img.shields.io/badge/Release-v0.40.1-6366f1?style=for-the-badge" alt="Release v0.40.1"></a>
 </p>
 
 <br>
@@ -23,7 +23,7 @@
 
 **Stratum Firewall** is a self-contained `amd64` firewall, multi-vendor VPN hub, and layered threat-defense gateway built on **FreeBSD 15.1-RELEASE**, stateful `pf`, and **OpenZFS**, managed through an asynchronous **Python 3.12 / FastAPI** control plane with zero PHP and `$0/year` recurring licensing.
 
-* **Current Release:** `v0.40.0` (November 2026) — [Full Release History (`CHANGELOG.md`)](./CHANGELOG.md)
+* **Current Release:** `v0.40.1` (November 2026) — [Full Release History (`CHANGELOG.md`)](./CHANGELOG.md)
 * **Interactive Live Demo (Light & Dark UI, no signup):** [https://demo.stratumfw.com](https://demo.stratumfw.com)
 * **Offline VGA `.iso` & Headless `115200 8N1` Serial `.img` Installers:** [https://stratumfw.com/download/](https://stratumfw.com/download/)
 * **Open by Design:** Every generated daemon configuration (`config.json`, `pf.conf`, `swanctl.conf`, `wg*.conf`, `unbound.conf`) lives in plain, auditable text on disk. Core FastAPI panel sources are maintained in a private build tree during pre-`v1.0` iteration and will be published on GitHub.
@@ -62,7 +62,7 @@ Ask about your firewall in plain natural language under **Diagnostics -> AI Assi
 
 ## Core Capabilities
 
-* **HTTP/HTTPS Download Control & Disguised Executable Detection (`v0.40.0`):** Squid explicit proxy (`:3128`) on chosen internal VLANs with a dedicated **Inspection CA** (`.cer` GPO / `.crt` PEM), first-byte magic-signature verification that catches disguised programs (`.exe` renamed `.pdf`/`.jpg`), **Monitor** and **Block** modes, 1-click default **Bypass list**, 1–365 day admin-audited **Downloads** log, fail-open resilience, and immediate rollback if an Apply fails halfway.
+* **HTTP/HTTPS Download Control & Disguised Executable Detection (`v0.40.0` – `v0.40.1`):** Squid explicit proxy (`:3128`) on chosen internal VLANs with a dedicated **Inspection CA** (`.cer` GPO / `.crt` PEM), first-byte magic-signature verification that catches disguised programs (`.exe` renamed `.pdf`/`.jpg`), **Monitor** and **Block** modes, 1-click default **Bypass list**, 1–365 day admin-audited **Downloads** log, fail-open resilience, and immediate rollback if an Apply fails halfway.
 * **Zero-Trust Closed-by-Default Interfaces (`v0.39.6`):** Fresh installations and factory resets start every interface closed (preserving LAN web-panel anti-lockout and DHCP), paired with the **`Internet (not private networks)`** destination and 1-click **`Allow internet access`**.
 * **Real-Time Web Filter Keywords (`v0.39.5`):** Catches domain-hopping & numbered sites (`site1234.com` -> `site1235.com`) by brand or keyword (`bahis`, `casino`, etc.) on the first Unbound DNS query (`Firewall > Web Filter > Keywords`) — matching only the domain's own label (ignoring subdomains/TLDs), supporting **List them only** one-click triage or **Block them at once** via **Your own list**, and running with zero query logging even when Web Activity is off.
 * **Capsicum-Sandboxed Application Control & Custom HTTPS Block Page (`v0.38.0 – v0.39.0`):** Out-of-path Layer-7 identification (`stratum-dpi 1.2`: `nDPI` LGPLv3 + Stratum TLS `ClientHello` / QUIC `Initial`) inside a FreeBSD **Capsicum** sandbox; supports **Monitor only** auditing, shared-CDN-safe per-connection HTTPS cutting, unnamed VPN tunnel blocking, a customizable **HTTPS Block Page** (own logo, top banner, live preview, isolated `_stratumbp` daemon & Group Policy **Block Page CA** `.cer`/`.crt`), and the **16th read-only MCP tool (`Application usage`)**.
